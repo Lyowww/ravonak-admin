@@ -1,0 +1,64 @@
+import { resolveBackendPath } from "@/lib/backend-url";
+
+export async function GET(
+  _request: Request,
+  context: { params: Promise<{ productId: string }> }
+) {
+  const { productId } = await context.params;
+  const base = resolveBackendPath(`/market/products/${productId}`);
+  if (!base) {
+    return Response.json({ detail: "API_URL не задан в окружении" }, { status: 500 });
+  }
+
+  const auth = _request.headers.get("authorization");
+
+  try {
+    const res = await fetch(base, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        ...(auth ? { Authorization: auth } : {}),
+      },
+    });
+    const data = await res.json().catch(() => ({}));
+    return Response.json(data, { status: res.status });
+  } catch {
+    return Response.json({ detail: "Не удалось загрузить товар" }, { status: 502 });
+  }
+}
+
+export async function PATCH(
+  request: Request,
+  context: { params: Promise<{ productId: string }> }
+) {
+  const { productId } = await context.params;
+  const base = resolveBackendPath(`/market/products/${productId}`);
+  if (!base) {
+    return Response.json({ detail: "API_URL не задан в окружении" }, { status: 500 });
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ detail: "Invalid JSON" }, { status: 400 });
+  }
+
+  const auth = request.headers.get("authorization");
+
+  try {
+    const res = await fetch(base, {
+      method: "PATCH",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...(auth ? { Authorization: auth } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    return Response.json(data, { status: res.status });
+  } catch {
+    return Response.json({ detail: "Не удалось обновить товар" }, { status: 502 });
+  }
+}
