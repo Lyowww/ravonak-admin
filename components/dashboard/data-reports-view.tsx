@@ -269,19 +269,6 @@ export function DataReportsView() {
 
   return (
     <div className="min-h-full bg-[#f5f5f7] px-4 py-8 md:px-8">
-      <div className="mb-6 rounded-xl border border-[#e8e8ec] bg-white px-4 py-3 text-[13px] leading-relaxed text-[#5a5a5e] shadow-sm">
-        Раздел «Отчёты» собран из доступных API:{" "}
-        <strong className="font-semibold text-[#0a0a0a]">
-          статистика доставки денег
-        </strong>{" "}
-        (период и суммы заказов) и{" "}
-        <strong className="font-semibold text-[#0a0a0a]">
-          текущий резерв Самарканда
-        </strong>{" "}
-        (раздел «Данные»). Отдельного endpoint «/data/reports» нет — поля без
-        источника показываются как «—».
-      </div>
-
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4 border-b border-[#e3e3e8] pb-6">
         <h1 className="text-[26px] font-bold tracking-tight text-[#0a0a0a]">Отчеты</h1>
         <div className="flex flex-wrap items-center gap-3">
