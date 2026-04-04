@@ -14,6 +14,28 @@ function pickStr(o: Record<string, unknown>, k: string): string | undefined {
   return typeof v === "string" ? v : undefined;
 }
 
+/** First positive integer among known API keys (market user id). */
+export function pickMarketUserIdFromOrderExtra(
+  ext: Record<string, unknown>,
+  keys: readonly string[],
+): number | null {
+  for (const k of keys) {
+    const v = ext[k];
+    if (typeof v === "number" && Number.isFinite(v)) {
+      const t = Math.trunc(v);
+      if (t > 0) return t;
+    }
+    if (typeof v === "string") {
+      const s = v.trim();
+      if (/^\d+$/.test(s)) {
+        const n = parseInt(s, 10);
+        if (n > 0) return n;
+      }
+    }
+  }
+  return null;
+}
+
 export function mapApiItemToOrderDetail(
   item: MarketOrderApiItem & Record<string, unknown>
 ): OrderDetail {
@@ -44,6 +66,22 @@ export function mapApiItemToOrderDetail(
   const courierName = pickStr(item, "courier_name") ?? "—";
   const courierId =
     ext.courier_id == null ? "—" : String(ext.courier_id);
+
+  const customerUserId = pickMarketUserIdFromOrderExtra(ext, [
+    "customer_id",
+    "user_id",
+    "buyer_id",
+    "client_id",
+    "customer_user_id",
+  ]);
+  const recipientUserId = pickMarketUserIdFromOrderExtra(ext, [
+    "recipient_user_id",
+    "recipient_id",
+    "receiver_user_id",
+    "receiver_id",
+  ]);
+  const pickerUserId = pickMarketUserIdFromOrderExtra(ext, ["picker_id"]);
+  const courierUserId = pickMarketUserIdFromOrderExtra(ext, ["courier_id"]);
 
   const address = pickStr(item, "delivery_address") ?? "—";
 
@@ -113,6 +151,10 @@ export function mapApiItemToOrderDetail(
     statusLabel: item.status_label,
     statusVariant,
     createdAtLabel,
+    customerUserId,
+    recipientUserId,
+    pickerUserId,
+    courierUserId,
     customer: {
       name: item.customer_name,
       phone: formatPhoneDisplay(item.customer_phone),

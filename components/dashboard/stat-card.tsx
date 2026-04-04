@@ -23,7 +23,7 @@ export function StatCard({
   const deltaGreen = alwaysUp ? true : positive;
 
   return (
-    <div className="flex min-h-[132px] flex-col rounded-2xl bg-white p-5 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+    <div className="flex min-h-[132px] flex-col rounded-2xl bg-white p-5 shadow-[0_4px_30px_rgba(0,0,0,0.06)]">
       <p className="text-[13px] font-medium leading-tight text-[#1a1a1a]">{title}</p>
       <div className="mt-3 flex flex-1 items-center justify-between gap-3">
         <Sparkline up={lineUp} />

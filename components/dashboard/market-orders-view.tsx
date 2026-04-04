@@ -2,7 +2,16 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatPhoneDisplay, mapApiItemToOrderDetail } from "@/lib/map-market-order-detail";
+import {
+  formatPhoneDisplay,
+  mapApiItemToOrderDetail,
+  pickMarketUserIdFromOrderExtra,
+} from "@/lib/map-market-order-detail";
+import {
+  formatBalanceUsd,
+  formatTelegramDisplay,
+  formatUserDateTime,
+} from "@/lib/market-users-format";
 import { marketOrdersFetchJson } from "@/lib/market-orders-client";
 import type {
   MarketOrderApiItem,
@@ -10,6 +19,10 @@ import type {
   MarketOrdersListResponse,
 } from "@/types/market-api-orders";
 import type { OrderDetail } from "@/types/market-order";
+import type {
+  MarketUserDetailResponse,
+  MarketUserItem,
+} from "@/types/market-users-api";
 
 function IconRefresh({ className }: { className?: string }) {
   return (
@@ -68,36 +81,89 @@ async function copyText(text: string) {
   }
 }
 
+const LIST_ORDER_CUSTOMER_USER_KEYS = [
+  "customer_id",
+  "user_id",
+  "buyer_id",
+  "client_id",
+  "customer_user_id",
+] as const;
+
+function listOrderCustomerUserId(order: MarketOrderApiItem): number | null {
+  return pickMarketUserIdFromOrderExtra(
+    order as MarketOrderApiItem & Record<string, unknown>,
+    LIST_ORDER_CUSTOMER_USER_KEYS,
+  );
+}
+
 function OrderCard({
   order,
   selected,
   onSelect,
+  muted = false,
+  customerUserId,
+  onOpenUser,
 }: {
   order: MarketOrderApiItem;
   selected: boolean;
   onSelect: () => void;
+  customerUserId: number | null;
+  onOpenUser: (userId: number) => void;
+  /** Completed / archived — softer, more transparent treatment */
+  muted?: boolean;
 }) {
+  const cardClass = muted
+    ? selected
+      ? "border-[#ececec] bg-[#ebebed]"
+      : "border-[#ececec]/80 bg-white/80 hover:bg-[#f3f3f4]"
+    : selected
+      ? "border-[#ececec] bg-[#ebebed]"
+      : "border-[#ececec] bg-white hover:bg-[#f6f6f7]";
+
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`flex w-full items-stretch gap-3 rounded-2xl border px-4 py-3.5 text-left transition ${
-        selected
-          ? "border-[#d8d8dc] bg-[#ebebed]"
-          : "border-[#e8e8ec] bg-[#f5f5f7] hover:bg-[#efeff2]"
-      }`}
+    <div
+      className={`flex w-full items-stretch gap-0 rounded-2xl border shadow-[0_1px_0_rgba(0,0,0,0.03)] transition ${cardClass} ${muted ? "opacity-90 hover:opacity-100" : ""}`}
     >
-      <div className="min-w-0 flex-1">
-        <p className="text-[15px] font-bold text-[#0a0a0a]">№ {order.order_number}</p>
-        <p className="mt-1 text-[14px] text-[#8a8a8a]">{order.customer_name}</p>
-        <p className="mt-0.5 text-[13px] text-[#8a8a8a]">
+      <button
+        type="button"
+        onClick={onSelect}
+        className="min-w-0 flex-1 px-4 py-3.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-[#0a0a0a]/15 focus-visible:ring-offset-2"
+      >
+        <p
+          className={`text-[15px] font-bold ${muted ? "text-[#8b8b90]" : "text-[#0a0a0a]"}`}
+        >
+          № {order.order_number}
+        </p>
+        <p
+          className={`mt-1 text-[14px] ${muted ? "text-[#b4b4ba]" : "text-[#8a8a8a]"}`}
+        >
+          {order.customer_name}
+        </p>
+        <p
+          className={`mt-0.5 text-[13px] ${muted ? "text-[#b8b8be]" : "text-[#8a8a8a]"}`}
+        >
           {formatPhoneDisplay(order.customer_phone)}
         </p>
-      </div>
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center self-center rounded-xl bg-[#2a2a2e] text-white">
-        <IconChevronOrder className="h-5 w-5" />
-      </span>
-    </button>
+      </button>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (customerUserId != null) onOpenUser(customerUserId);
+          else onSelect();
+        }}
+        className={`mr-3 flex h-10 w-10 shrink-0 items-center justify-center self-center rounded-xl text-white transition hover:opacity-90 ${muted ? "bg-[#2a2a2e]/30" : "bg-[#2a2a2e]"}`}
+        aria-label={
+          customerUserId != null
+            ? "Информация о пользователе"
+            : "Выбрать заказ"
+        }
+      >
+        <IconChevronOrder
+          className={`h-5 w-5 ${muted ? "opacity-60" : ""}`}
+        />
+      </button>
+    </div>
   );
 }
 
@@ -105,27 +171,47 @@ function PersonBlock({
   label,
   name,
   phone,
+  userId,
+  onOpenUser,
 }: {
   label: string;
   name: string;
   phone: string;
+  userId: number | null;
+  onOpenUser: (userId: number) => void;
 }) {
   return (
-    <div className="min-w-0 flex-1">
-      <p className="text-[13px] font-medium text-[#8a8a8a]">{label}</p>
-      <p className="mt-2 text-[15px] font-semibold text-[#0a0a0a]">{name}</p>
-      <div className="mt-2 flex items-center gap-2">
-        <IconPhoneSmall className="h-4 w-4 shrink-0 text-[#8a8a8a]" />
-        <span className="text-[14px] text-[#3a3a3a]">{phone}</span>
-        <button
-          type="button"
-          onClick={() => void copyText(phone.replace(/\s/g, ""))}
-          className="rounded-md p-1 text-[#8a8a8a] transition hover:bg-black/5 hover:text-[#0a0a0a]"
-          aria-label="Копировать телефон"
-        >
-          <IconCopy className="h-4 w-4" />
-        </button>
+    <div className="flex min-w-0 flex-1 items-stretch gap-3 rounded-2xl border border-[#ececec] bg-white p-4 shadow-[0_1px_0_rgba(0,0,0,0.03)]">
+      <div className="min-w-0 flex-1">
+        <p className="text-[13px] font-medium text-[#8a8a8a]">{label}</p>
+        <p className="mt-2 text-[15px] font-semibold text-[#0a0a0a]">{name}</p>
+        <div className="mt-2 flex items-center gap-2">
+          <IconPhoneSmall className="h-4 w-4 shrink-0 text-[#8a8a8a]" />
+          <span className="text-[14px] text-[#3a3a3a]">{phone}</span>
+          <button
+            type="button"
+            onClick={() => void copyText(phone.replace(/\s/g, ""))}
+            className="rounded-md p-1 text-[#8a8a8a] transition hover:bg-black/[0.04] hover:text-[#0a0a0a]"
+            aria-label="Копировать телефон"
+          >
+            <IconCopy className="h-4 w-4" />
+          </button>
+        </div>
       </div>
+      <button
+        type="button"
+        disabled={userId == null}
+        title={
+          userId == null
+            ? "ID пользователя недоступен в данных заказа"
+            : "Информация о пользователе"
+        }
+        onClick={() => userId != null && onOpenUser(userId)}
+        className="flex h-10 w-10 shrink-0 items-center justify-center self-center rounded-xl bg-[#2a2a2e] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35"
+        aria-label="Информация о пользователе"
+      >
+        <IconChevronOrder className="h-5 w-5" />
+      </button>
     </div>
   );
 }
@@ -134,16 +220,32 @@ function StaffBlock({
   label,
   name,
   id,
+  userId,
+  onOpenUser,
 }: {
   label: string;
   name: string;
   id: string;
+  userId: number | null;
+  onOpenUser: (userId: number) => void;
 }) {
   return (
-    <div className="min-w-0 flex-1">
-      <p className="text-[13px] font-medium text-[#8a8a8a]">{label}</p>
-      <p className="mt-2 text-[15px] font-semibold text-[#0a0a0a]">{name}</p>
-      <p className="mt-1 text-[13px] text-[#8a8a8a]">ID {id}</p>
+    <div className="flex min-w-0 flex-1 items-stretch gap-3 rounded-2xl border border-[#ececec] bg-white p-4 shadow-[0_1px_0_rgba(0,0,0,0.03)]">
+      <div className="min-w-0 flex-1">
+        <p className="text-[13px] font-medium text-[#8a8a8a]">{label}</p>
+        <p className="mt-2 text-[15px] font-semibold text-[#0a0a0a]">{name}</p>
+        <p className="mt-1 text-[13px] text-[#8a8a8a]">ID {id}</p>
+      </div>
+      {userId != null ? (
+        <button
+          type="button"
+          onClick={() => onOpenUser(userId)}
+          className="flex h-10 w-10 shrink-0 items-center justify-center self-center rounded-xl bg-[#2a2a2e] text-white transition hover:opacity-90"
+          aria-label="Информация о пользователе"
+        >
+          <IconChevronOrder className="h-5 w-5" />
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -151,28 +253,29 @@ function StaffBlock({
 function OrderDetailPanel({
   detail,
   onDeleteClick,
+  onOpenUser,
 }: {
   detail: OrderDetail;
   onDeleteClick: () => void;
+  onOpenUser: (userId: number) => void;
 }) {
   return (
     <div className="flex h-full min-h-0 flex-col bg-white">
-      <div className="border-b border-[#ececee] px-8 pb-6 pt-2">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="border-b border-[#ececec] px-8 pb-6 pt-6">
+        <div className="flex w-full flex-col gap-4 sm:flex-row sm:flex-nowrap sm:items-end sm:gap-4">
           <div className="min-w-0 flex-1">
             <label className="text-[13px] font-medium text-[#8a8a8a]">
               Оставить комментарий к заказу
             </label>
-            <textarea
+            <input
               placeholder="Введите текст"
-              rows={3}
-              className="mt-2 w-full resize-none rounded-2xl border border-[#e8e8ec] bg-[#f5f5f7] px-4 py-3 text-[14px] text-[#0a0a0a] placeholder:text-[#b0b0b0] outline-none focus:border-[#d0d0d4]"
+              className="mt-2 w-full rounded-2xl border-0 bg-[#efeff0] px-4 py-3.5 text-[14px] text-[#0a0a0a] placeholder:text-[#a8a8ae] outline-none ring-0 focus:bg-[#e8e8ea]"
             />
           </div>
           <button
             type="button"
             onClick={onDeleteClick}
-            className="shrink-0 rounded-xl bg-[#ef4444] px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-[#dc2626]"
+            className="shrink-0 rounded-2xl bg-[#ff4d4d] px-6 py-3.5 text-[14px] font-semibold text-white transition hover:bg-[#e64444]"
           >
             Удалить заказ
           </button>
@@ -180,73 +283,100 @@ function OrderDetailPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto px-8 py-6">
-        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#ececee] pb-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <h3 className="text-[20px] font-bold text-[#0a0a0a]">Заказ</h3>
-          <span className="text-[15px] font-medium text-[#6e6e6e]">
+          <span className="text-[14px] font-medium text-[#8a8a8a]">
             {detail.createdAtLabel}
           </span>
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center gap-2">
-          <span className="text-[17px] font-bold text-[#0a0a0a]">№ {detail.number}</span>
-          <button
-            type="button"
-            onClick={() => void copyText(detail.number)}
-            className="rounded-md p-1 text-[#8a8a8a] hover:bg-black/5"
-            aria-label="Копировать номер"
-          >
-            <IconCopy className="h-4 w-4" />
-          </button>
-          <span className="ml-2 inline-flex items-center gap-2 rounded-full bg-[#f5f5f7] px-3 py-1 text-[13px] font-medium text-[#3a3a3a]">
-            <span
-              className={`h-2 w-2 rounded-full ${
-                detail.statusVariant === "processing"
-                  ? "bg-[#9ca3af]"
-                  : detail.statusVariant === "completed"
-                    ? "bg-[#22c55e]"
-                    : "bg-[#9ca3af]"
-              }`}
-            />
-            {detail.statusLabel}
-          </span>
+        <div className="mt-5 rounded-2xl border border-[#ececec] bg-white p-5 shadow-[0_1px_0_rgba(0,0,0,0.03)]">
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div>
+              <p className="text-[13px] font-medium text-[#8a8a8a]">
+                Номер заказа
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <span className="text-[17px] font-bold text-[#0a0a0a]">
+                  № {detail.number}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void copyText(detail.number)}
+                  className="rounded-lg p-1.5 text-[#8a8a8a] transition hover:bg-black/[0.04] hover:text-[#0a0a0a]"
+                  aria-label="Копировать номер"
+                >
+                  <IconCopy className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <div>
+              <p className="text-[13px] font-medium text-[#8a8a8a]">
+                Статус заказа
+              </p>
+              <div className="mt-2 flex items-center gap-2.5">
+                <span
+                  className={`h-2.5 w-2.5 shrink-0 rounded-full ${detail.statusVariant === "processing"
+                    ? "bg-[#9ca3af]"
+                    : detail.statusVariant === "completed"
+                      ? "bg-[#22c55e]"
+                      : "bg-[#9ca3af]"
+                    }`}
+                />
+                <span className="text-[15px] font-semibold text-[#0a0a0a]">
+                  {detail.statusLabel}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="mt-8 grid gap-8 border-b border-[#ececee] pb-8 md:grid-cols-2">
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
           <PersonBlock
             label="Заказчик"
             name={detail.customer.name}
             phone={detail.customer.phone}
+            userId={detail.customerUserId}
+            onOpenUser={onOpenUser}
           />
           <PersonBlock
             label="Получатель"
             name={detail.recipient.name}
             phone={detail.recipient.phone}
+            userId={detail.recipientUserId}
+            onOpenUser={onOpenUser}
           />
         </div>
 
-        <div className="mt-8 grid gap-8 border-b border-[#ececee] pb-8 md:grid-cols-2">
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
           <StaffBlock
             label="Сборщик"
             name={detail.picker.name}
             id={detail.picker.id}
+            userId={detail.pickerUserId}
+            onOpenUser={onOpenUser}
           />
           <StaffBlock
             label="Курьер"
             name={detail.courier.name}
             id={detail.courier.id}
+            userId={detail.courierUserId}
+            onOpenUser={onOpenUser}
           />
         </div>
 
-        <div className="mt-8 border-b border-[#ececee] pb-8">
-          <p className="text-[13px] font-medium text-[#8a8a8a]">Адрес доставки</p>
-          <div className="mt-2 flex items-start gap-2">
+        <div className="mt-6 rounded-2xl border border-[#ececec] bg-white p-4 shadow-[0_1px_0_rgba(0,0,0,0.03)]">
+          <p className="text-[13px] font-medium text-[#8a8a8a]">
+            Адрес доставки
+          </p>
+          <div className="mt-3 flex items-start gap-3">
             <p className="min-w-0 flex-1 text-[15px] leading-relaxed text-[#0a0a0a]">
               {detail.address}
             </p>
             <button
               type="button"
               onClick={() => void copyText(detail.address)}
-              className="shrink-0 rounded-md p-1 text-[#8a8a8a] hover:bg-black/5"
+              className="shrink-0 rounded-lg p-1.5 text-[#8a8a8a] transition hover:bg-black/[0.04] hover:text-[#0a0a0a]"
               aria-label="Копировать адрес"
             >
               <IconCopy className="h-4 w-4" />
@@ -256,16 +386,18 @@ function OrderDetailPanel({
 
         <div className="mt-8">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h4 className="text-[17px] font-bold text-[#0a0a0a]">Товары в заказе</h4>
+            <h4 className="text-[17px] font-bold text-[#0a0a0a]">
+              Товары в заказе
+            </h4>
             <p className="text-[15px] font-semibold text-[#0a0a0a]">
               {detail.itemsTotalUzs} сум / {detail.itemsTotalUsd} $
             </p>
           </div>
-          <ul className="mt-4 space-y-4">
+          <ul className="mt-4 space-y-3">
             {detail.items.map((item) => (
               <li
                 key={item.id}
-                className="flex gap-4 rounded-2xl border border-[#ececee] bg-[#fafafa] p-4"
+                className="flex gap-4 rounded-2xl border border-[#ececec] bg-white p-4 shadow-[0_1px_0_rgba(0,0,0,0.03)]"
               >
                 <div
                   className="h-14 w-14 shrink-0 rounded-xl bg-gradient-to-br from-amber-200 to-amber-400"
@@ -276,7 +408,9 @@ function OrderDetailPanel({
                     {item.title}
                   </p>
                   {item.qtyLabel ? (
-                    <p className="mt-1 text-[13px] text-[#8a8a8a]">{item.qtyLabel}</p>
+                    <p className="mt-1 text-[13px] text-[#8a8a8a]">
+                      {item.qtyLabel}
+                    </p>
                   ) : null}
                   <p className="mt-2 text-[14px] font-medium text-[#0a0a0a]">
                     {item.priceUzs} сум / {item.priceUsd} $
@@ -286,6 +420,153 @@ function OrderDetailPanel({
             ))}
           </ul>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function UserInfoModal({
+  open,
+  userId,
+  onClose,
+}: {
+  open: boolean;
+  userId: number | null;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [item, setItem] = useState<MarketUserItem | null>(null);
+
+  useEffect(() => {
+    if (!open || userId == null) {
+      setItem(null);
+      setErr(null);
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    async function run() {
+      setLoading(true);
+      setErr(null);
+      const r = await marketOrdersFetchJson<MarketUserDetailResponse>(
+        `/api/market/users/${userId}`
+      );
+      if (cancelled) return;
+      setLoading(false);
+      if (!r.ok) {
+        if (r.unauthorized) router.replace("/");
+        else setErr(r.message);
+        setItem(null);
+        return;
+      }
+      setItem(r.data.item);
+    }
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, userId, router]);
+
+  if (!open || userId == null) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        className="relative max-h-[min(90vh,640px)] w-full max-w-[420px] overflow-y-auto rounded-3xl border border-[#ececec] bg-white p-6 shadow-xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="user-info-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 rounded-lg p-1.5 text-[#9ca3af] transition hover:bg-black/5 hover:text-[#0a0a0a]"
+          aria-label="Закрыть"
+        >
+          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path
+              d="M18 6L6 18M6 6l12 12"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+
+        <h2
+          id="user-info-title"
+          className="pr-10 text-[18px] font-bold text-[#0a0a0a]"
+        >
+          Пользователь
+        </h2>
+        <p className="mt-1 text-[13px] text-[#8a8a8a]">ID {userId}</p>
+
+        {loading ? (
+          <p className="mt-8 text-center text-[14px] text-[#8a8a8a]">
+            Загрузка…
+          </p>
+        ) : err ? (
+          <p className="mt-8 text-center text-[14px] text-red-700">{err}</p>
+        ) : item ? (
+          <dl className="mt-6 space-y-4">
+            <div>
+              <dt className="text-[12px] font-medium text-[#8a8a8a]">
+                Имя
+              </dt>
+              <dd className="mt-1 text-[15px] font-semibold text-[#0a0a0a]">
+                {item.full_name}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[12px] font-medium text-[#8a8a8a]">
+                Телефон
+              </dt>
+              <dd className="mt-1 text-[15px] text-[#0a0a0a]">
+                {item.phone_number}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[12px] font-medium text-[#8a8a8a]">
+                Telegram
+              </dt>
+              <dd className="mt-1 text-[15px] text-[#0a0a0a]">
+                {formatTelegramDisplay(item.telegram_username)} · tg_id{" "}
+                {item.tg_id}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[12px] font-medium text-[#8a8a8a]">
+                Баланс
+              </dt>
+              <dd className="mt-1 text-[15px] font-semibold text-[#0a0a0a]">
+                {formatBalanceUsd(item.balance_usd)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[12px] font-medium text-[#8a8a8a]">
+                Регистрация
+              </dt>
+              <dd className="mt-1 text-[14px] text-[#3a3a3a]">
+                {formatUserDateTime(item.registered_at)}
+              </dd>
+            </div>
+          </dl>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-8 w-full rounded-2xl border border-[#ececec] bg-[#efeff0] py-3 text-[15px] font-semibold text-[#0a0a0a] transition hover:bg-[#e4e4e6]"
+        >
+          Закрыть
+        </button>
       </div>
     </div>
   );
@@ -307,7 +588,7 @@ function DeleteOrderModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div
-        className="relative w-full max-w-[400px] rounded-3xl bg-white p-8 shadow-xl"
+        className="relative w-full max-w-[400px] rounded-3xl border border-[#ececec] bg-white p-8 shadow-xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-order-title"
@@ -348,7 +629,7 @@ function DeleteOrderModal({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="flex-1 rounded-xl border border-[#e8e8ec] bg-[#f5f5f7] py-3.5 text-[15px] font-semibold text-[#0a0a0a] transition hover:bg-[#ececee] disabled:opacity-50"
+            className="flex-1 rounded-2xl border border-[#ececec] bg-[#efeff0] py-3.5 text-[15px] font-semibold text-[#0a0a0a] transition hover:bg-[#e4e4e6] disabled:opacity-50"
           >
             Оставить
           </button>
@@ -356,7 +637,7 @@ function DeleteOrderModal({
             type="button"
             onClick={onConfirmDelete}
             disabled={loading}
-            className="flex-1 rounded-xl bg-[#0f766e] py-3.5 text-[15px] font-semibold text-white transition hover:bg-[#0d9488] disabled:opacity-60"
+            className="flex-1 rounded-2xl bg-[#0f766e] py-3.5 text-[15px] font-semibold text-white transition hover:bg-[#0d9488] disabled:opacity-60"
           >
             {loading ? "Удаление…" : "Удалить"}
           </button>
@@ -379,6 +660,14 @@ export function MarketOrdersView() {
   const [error, setError] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [refreshSpinKey, setRefreshSpinKey] = useState(0);
+  const [userInfoOpen, setUserInfoOpen] = useState(false);
+  const [userInfoId, setUserInfoId] = useState<number | null>(null);
+
+  const openUserInfo = useCallback((id: number) => {
+    setUserInfoId(id);
+    setUserInfoOpen(true);
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 400);
@@ -501,22 +790,7 @@ export function MarketOrdersView() {
   }
 
   return (
-    <div className="flex min-h-full flex-col bg-white">
-      <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-[#e3e3e8] px-8 pb-5 pt-8">
-        <h1 className="text-[26px] font-bold tracking-tight text-[#0a0a0a]">
-          Заказы
-        </h1>
-        <button
-          type="button"
-          onClick={refresh}
-          disabled={listLoading}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#e8e8ec] bg-[#f5f5f7] text-[#6b7280] transition hover:bg-[#ececee] hover:text-[#0a0a0a] disabled:opacity-50"
-          aria-label="Обновить"
-        >
-          <IconRefresh className="h-5 w-5" />
-        </button>
-      </header>
-
+    <div className="flex min-h-full flex-col bg-[#f8f8f8]">
       {error ? (
         <div className="border-b border-red-200 bg-red-50 px-8 py-3 text-[14px] text-red-800">
           {error}
@@ -524,24 +798,47 @@ export function MarketOrdersView() {
       ) : null}
 
       <div className="flex min-h-0 flex-1">
-        <div className="relative flex w-full max-w-[440px] shrink-0 flex-col border-r border-[#e8e8ec] bg-[#fafafa]">
+        <div className="relative flex w-full max-w-[440px] shrink-0 flex-col border-r border-[#ececec] bg-[#f8f8f8]">
           {listLoading ? (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 text-[14px] text-[#6e6e6e]">
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#f8f8f8]/75 text-[14px] text-[#6e6e6e]">
               Загрузка…
             </div>
           ) : null}
-          <div className="shrink-0 px-6 pb-4 pt-5">
+          <header className="flex shrink-0 flex-wrap items-center gap-3 px-6 pb-4 pt-8">
+            <h1 className="text-[26px] font-bold tracking-tight text-[#0a0a0a]">
+              Заказы
+            </h1>
+            <button
+              type="button"
+              onClick={() => {
+                setRefreshSpinKey((k) => k + 1);
+                refresh();
+              }}
+              disabled={listLoading}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#efeff0] text-[#3a3a3a] transition hover:bg-[#e4e4e6] disabled:opacity-50"
+              aria-label="Обновить"
+            >
+              <span
+                key={refreshSpinKey}
+                className={`inline-flex items-center justify-center ${refreshSpinKey > 0 ? "market-orders-refresh-icon-spin" : ""
+                  }`}
+              >
+                <IconRefresh className="h-[18px] w-[18px]" />
+              </span>
+            </button>
+          </header>
+          <div className="shrink-0 px-6 pb-4">
             <input
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Поиск заказа"
-              className="w-full rounded-2xl border-0 bg-[#e9ecef] px-4 py-3.5 text-[15px] text-[#0a0a0a] placeholder:text-[#8a8a8a] outline-none ring-0 focus:bg-[#e3e7eb]"
+              className="w-full rounded-2xl border-0 bg-[#efeff0] px-4 py-3.5 text-[15px] text-[#0a0a0a] placeholder:text-[#8a8a8a] outline-none ring-0 focus:bg-[#e8e8ea]"
             />
           </div>
           <div className="min-h-0 flex-1 space-y-8 overflow-y-auto px-6 pb-10">
             <section>
-              <h2 className="mb-3 text-[15px] font-semibold text-[#0a0a0a]">
+              <h2 className="mb-3 text-[14px] font-semibold text-[#a8a8ae]">
                 В работе
               </h2>
               <div className="space-y-3">
@@ -550,6 +847,8 @@ export function MarketOrdersView() {
                     key={o.order_id}
                     order={o}
                     selected={selectedId === o.order_id}
+                    customerUserId={listOrderCustomerUserId(o)}
+                    onOpenUser={openUserInfo}
                     onSelect={() => setSelectedId(o.order_id)}
                   />
                 ))}
@@ -559,7 +858,7 @@ export function MarketOrdersView() {
               </div>
             </section>
             <section>
-              <h2 className="mb-3 text-[15px] font-semibold text-[#0a0a0a]">
+              <h2 className="mb-3 text-[15px] font-semibold tracking-tight text-[#a8a8ae]">
                 Завершенные
               </h2>
               <div className="space-y-3">
@@ -568,11 +867,14 @@ export function MarketOrdersView() {
                     key={o.order_id}
                     order={o}
                     selected={selectedId === o.order_id}
+                    customerUserId={listOrderCustomerUserId(o)}
+                    onOpenUser={openUserInfo}
+                    muted
                     onSelect={() => setSelectedId(o.order_id)}
                   />
                 ))}
                 {completed.length === 0 ? (
-                  <p className="text-[14px] text-[#8a8a8a]">Нет заказов</p>
+                  <p className="text-[14px] text-[#b8b8be]">Нет заказов</p>
                 ) : null}
               </div>
             </section>
@@ -592,6 +894,7 @@ export function MarketOrdersView() {
             <OrderDetailPanel
               detail={detail}
               onDeleteClick={() => setDeleteOpen(true)}
+              onOpenUser={openUserInfo}
             />
           ) : (
             <div className="flex h-full min-h-[320px] items-center justify-center px-8 text-center text-[15px] text-[#8a8a8a]">
@@ -600,6 +903,15 @@ export function MarketOrdersView() {
           )}
         </div>
       </div>
+
+      <UserInfoModal
+        open={userInfoOpen}
+        userId={userInfoId}
+        onClose={() => {
+          setUserInfoOpen(false);
+          setUserInfoId(null);
+        }}
+      />
 
       <DeleteOrderModal
         open={deleteOpen}

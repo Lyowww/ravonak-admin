@@ -8,11 +8,24 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+@keyframes market-orders-refresh-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.market-orders-refresh-icon-spin {
+  display: inline-flex;
+  transform-origin: center;
+  animation: market-orders-refresh-spin 0.55s cubic-bezier(0.4, 0, 0.2, 1);
 }

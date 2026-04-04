@@ -31,6 +31,11 @@ export type MarketOrderDetailResponse = {
 
 /** Optional fields that detail may include beyond the list schema */
 export type MarketOrderDetailExtra = {
+  customer_id?: string | number | null;
+  user_id?: string | number | null;
+  buyer_id?: string | number | null;
+  recipient_user_id?: string | number | null;
+  recipient_id?: string | number | null;
   recipient_name?: string | null;
   recipient_phone?: string | null;
   delivery_address?: string | null;

@@ -77,7 +77,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#f5f5f7]">
+    <div className="flex min-h-screen bg-[#ffffff]">
       <div className="sticky top-0 flex h-screen w-[min(100%,304px)] max-w-[304px] shrink-0 flex-col">
         <Sidebar onLogout={logout} />
       </div>

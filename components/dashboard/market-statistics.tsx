@@ -179,7 +179,7 @@ export function MarketStatistics() {
     <div className="p-8 pb-10">
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4 border-b border-[#e3e3e8] pb-6">
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-[26px] font-bold tracking-tight text-[#0a0a0a]">
+          <h2 className="text-[26px] font-extrabold tracking-tight text-[#0a0a0a]">
             Статистика
           </h2>
           <div className="relative" ref={wrapRef}>
@@ -189,14 +189,17 @@ export function MarketStatistics() {
                 e.stopPropagation();
                 setDropdownOpen((o) => !o);
               }}
-              className="flex items-center gap-2 rounded-full border border-[#e4e4e4] bg-white px-4 py-2 text-[14px] font-medium text-[#3a3a3a] shadow-sm transition hover:border-[#d0d0d0]"
+              className="flex items-center gap-2 rounded-[12px] border border-[#e4e4e4] bg-[#EDF0F1] px-4 py-2 text-[14px] font-medium text-[#3a3a3a] shadow-sm transition hover:border-[#d0d0d0]"
             >
               {PERIOD_LABELS[period]}
-              <span className="text-[10px] text-zinc-500">▼</span>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 10L12 15" stroke="#151515" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M12 15L17 10" stroke="#151515" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
             {dropdownOpen ? (
               <div
-                className="absolute left-0 z-20 mt-2 min-w-[200px] overflow-hidden rounded-2xl border border-[#e8e8e8] bg-white py-1 shadow-lg"
+                className="absolute left-0 z-20 mt-2 min-w-[200px] overflow-hidden rounded-[12px] border border-[#e8e8e8] bg-[#EDF0F1] py-1 shadow-lg"
                 onClick={(e) => e.stopPropagation()}
               >
                 {(["day", "week", "month", "custom"] as MarketPeriod[]).map(
@@ -259,7 +262,7 @@ export function MarketStatistics() {
       ) : (
         <>
           <section className="mb-8">
-            <h3 className="mb-4 text-[17px] font-semibold text-[#0a0a0a]">
+            <h3 className="mb-4 text-[17px] font-extrabold text-[#0a0a0a]">
               Пользователи
             </h3>
             <div className="grid gap-4 md:grid-cols-2">
@@ -280,7 +283,7 @@ export function MarketStatistics() {
           </section>
 
           <section>
-            <h3 className="mb-4 text-[17px] font-semibold text-[#0a0a0a]">
+            <h3 className="mb-4 text-[17px] font-extrabold text-[#0a0a0a]">
               Заказы
             </h3>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
