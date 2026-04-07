@@ -13,6 +13,7 @@ import {
   type SubcategoryOption,
 } from "@/lib/market-category-utils";
 import { ProductCard } from "@/components/dashboard/product-card";
+import { CustomDropdown } from "@/components/dashboard/custom-dropdown";
 import { resolveMediaUrl } from "@/lib/media-url";
 import type {
   MarketChapterNode,
@@ -51,16 +52,6 @@ function IconPlus() {
   );
 }
 
-function IconPencil() {
-  return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M4 20h4l9.5-9.5-4-4L4 16v4zm2-2h2v-1.5L13.5 9l1 1L7 18H6v-2zM15.5 6.5l1 1 2-2-1-1-2 2z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
 
 function IconClose() {
   return (
@@ -157,126 +148,138 @@ function AddProductModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
-      <div className="relative z-10 flex max-h-[90vh] w-full max-w-[900px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[#ececee] px-8 py-5">
-          <h2 className="text-[20px] font-bold text-[#0a0a0a]">Добавить товар</h2>
+      <div className="relative z-10 flex max-h-[90vh] w-full max-w-[980px] flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl">
+        <div className="flex items-center justify-between px-8 pb-4 pt-6">
+          <h2 className="text-[24px] font-bold leading-none text-[#0d0d0f]">
+            Добавить товар
+          </h2>
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="rounded-lg p-2 text-[#9ca3af] hover:bg-black/5"
+            className="rounded-lg p-2 text-[#202124] hover:bg-black/5"
             aria-label="Закрыть"
           >
             <IconClose />
           </button>
         </div>
-        <div className="grid flex-1 gap-8 overflow-y-auto p-8 md:grid-cols-2">
-          <div className="flex flex-col gap-6">
-            <div className="flex h-52 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#d8d8dc] bg-[#f8f8f8]">
+        <div className="grid flex-1 gap-4 overflow-y-auto px-8 pb-6 md:grid-cols-[340px_1fr]">
+          <div className="flex flex-col gap-3">
+            <div className="flex h-[320px] flex-col items-center justify-center rounded-2xl border border-[#e6e8eb] bg-[#edf0f2]">
               <IconPlus />
-              <p className="mt-2 text-[14px] font-medium text-[#6e6e6e]">
+              <p className="mt-2 text-[14px] font-medium leading-none text-[#2b2f33]">
                 Загрузить фото
               </p>
-              <p className="mt-2 text-[12px] text-[#9ca3af]">URL изображения</p>
               <input
-                className="mt-3 w-full max-w-[240px] rounded-lg border border-[#e4e4e4] px-3 py-2 text-[13px]"
+                className="mt-4 w-[86%] rounded-xl border border-[#d8dde2] bg-white px-3 py-2 text-[13px] text-[#0a0a0a] outline-none"
                 placeholder="https://…"
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
               />
             </div>
-            <div>
-              <label className="text-[13px] font-medium text-[#8a8a8a]">
+            <div className="overflow-visible rounded-2xl border border-[#e6e8eb]">
+              <label className="block border-b border-[#eceef1] px-4 py-2.5 text-[14px] text-[#a1a5aa]">
                 Категория товара
               </label>
-              <select
-                className="mt-2 w-full appearance-none rounded-2xl border border-[#e8e8ec] bg-[#f5f5f7] px-4 py-3 text-[14px] text-[#0a0a0a] outline-none"
+              <CustomDropdown
                 value={subId}
-                onChange={(e) => setSubId(e.target.value)}
-              >
-                <option value="">Выберите категорию</option>
-                {subcategoryOptions.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+                onChange={setSubId}
+                placeholder="Выберите категорию"
+                buttonClassName="bg-white px-4 py-3 text-[18px] leading-tight text-[#0a0a0a]"
+                options={subcategoryOptions.map((o) => ({
+                  value: String(o.id),
+                  label: o.label,
+                }))}
+              />
             </div>
           </div>
-          <div className="flex flex-col gap-5">
-            <div className="relative">
-              <label className="text-[12px] font-medium text-[#8a8a8a]">
+          <div className="flex flex-col gap-3">
+            <div className="relative overflow-hidden rounded-2xl border border-[#e6e8eb]">
+              <label className="block border-b border-[#eceef1] px-4 py-2.5 text-[14px] text-[#a1a5aa]">
                 Название продукта
               </label>
-              <span className="absolute right-5 top-8 text-[#b0b0b0]">
-                <IconPencil />
-              </span>
+             
               <input
-                className="mt-1 w-full rounded-2xl border border-[#e8e8ec] bg-[#f5f5f7] px-4 py-3 pr-10 text-[14px]"
+                className="w-full bg-white px-4 py-3 pr-10 text-[16px] leading-tight text-[#1a1d22] outline-none placeholder:text-[#babfc6]"
                 placeholder="Введите название"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
             </div>
-            <div className="relative">
-              <label className="text-[12px] font-medium text-[#8a8a8a]">
+            <div className="relative overflow-hidden rounded-2xl border border-[#e6e8eb]">
+              <label className="block border-b border-[#eceef1] px-4 py-2.5 text-[14px] text-[#a1a5aa]">
                 Описание продукта
               </label>
-              <span className="absolute right-5 top-8 text-[#b0b0b0]">
-                <IconPencil />
-              </span>
               <textarea
-                rows={5}
-                className="mt-1 w-full resize-none rounded-2xl border border-[#e8e8ec] bg-[#f5f5f7] px-4 py-3 pr-10 text-[14px]"
+                rows={3}
+                className="w-full resize-none bg-white px-4 py-3 pr-10 text-[16px] leading-6 text-[#1a1d22] outline-none placeholder:text-[#babfc6]"
                 placeholder="Введите описание"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
             </div>
-            <div className="relative">
-              <label className="text-[12px] font-medium text-[#8a8a8a]">
-                Срок годности
-              </label>
-              <span className="absolute right-5 top-8 text-[#b0b0b0]">
-                <IconPencil />
-              </span>
-              <input
-                className="mt-1 w-full rounded-2xl border border-[#e8e8ec] bg-[#f5f5f7] px-4 py-3 pr-10 text-[14px]"
-                placeholder="Впишите кол-во дней"
-                value={shelfLife}
-                onChange={(e) => setShelfLife(e.target.value)}
-              />
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="relative overflow-hidden rounded-2xl border border-[#e6e8eb]">
+                <label className="block border-b border-[#eceef1] px-4 py-3 text-[15px] text-[#a1a5aa]">
+                  Срок годности
+                </label>
+                <input
+                  className="w-full bg-white px-4 py-3 pr-10 text-[16px] leading-tight text-[#1a1d22] outline-none placeholder:text-[#babfc6]"
+                  placeholder="Впишите кол-во дней"
+                  value={shelfLife}
+                  onChange={(e) => setShelfLife(e.target.value)}
+                />
+              </div>
+              <div className="overflow-visible rounded-2xl border border-[#e6e8eb]">
+                <label className="block border-b border-[#eceef1] px-4 py-2.5 text-[14px] text-[#a1a5aa]">
+                  Цена товара за единицу
+                </label>
+                <div className="grid grid-cols-[1fr_48px_1fr_48px]">
+                  <input
+                    className="min-w-0 bg-white px-4 py-3 text-[16px] leading-tight text-[#1a1d22] outline-none placeholder:text-[#babfc6]"
+                    placeholder="Сумма"
+                    inputMode="numeric"
+                    value={priceUzs}
+                    onChange={(e) => setPriceUzs(e.target.value)}
+                  />
+                  <div className="flex items-center justify-center border-l border-[#eceef1] text-[16px] font-semibold leading-tight text-[#1a1d22]">
+                    сум
+                  </div>
+                  <div className="border-l border-[#eceef1] bg-[#f8f9fb] px-4 py-3 text-[16px] leading-tight text-[#1a1d22]">
+                    {previewUsdAdd != null
+                      ? previewUsdAdd.toLocaleString("ru-RU", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })
+                      : "Сумма"}
+                  </div>
+                  <div className="flex items-center justify-center border-l border-[#eceef1] text-[16px] font-semibold leading-tight text-[#1a1d22]">
+                    $
+                  </div>
+                </div>
+              </div>
             </div>
             <div>
               <label className="text-[12px] font-medium text-[#8a8a8a]">
                 Цена товара за единицу
               </label>
-              <div className="mt-2 grid grid-cols-2 gap-3">
-                <input
-                  className="rounded-2xl border border-[#e8e8ec] bg-[#f5f5f7] px-4 py-3 text-[14px]"
-                  placeholder="Сумма сум"
-                  inputMode="numeric"
-                  value={priceUzs}
-                  onChange={(e) => setPriceUzs(e.target.value)}
-                />
-                <div className="flex items-center rounded-2xl border border-[#e8e8ec] bg-[#fafafa] px-4 py-3 text-[13px] text-[#6e6e6e]">
-                  {previewUsdAdd != null
-                    ? formatProductUsd(previewUsdAdd)
-                    : "≈ USD по курсу"}
-                </div>
-              </div>
+              <p className="mt-1 text-[12px] text-[#9ca3af]">
+                {previewUsdAdd != null
+                  ? `По курсу: ${formatProductUsd(previewUsdAdd)}`
+                  : "USD будет рассчитан автоматически"}
+              </p>
             </div>
           </div>
         </div>
         {err ? (
           <p className="px-8 pb-2 text-center text-[13px] text-red-600">{err}</p>
         ) : null}
-        <div className="border-t border-[#ececee] px-8 py-5">
+        <div className="px-8 pb-6 pt-2">
           <button
             type="button"
             disabled={loading}
             onClick={() => void submit()}
-            className="w-full rounded-2xl bg-[#006c6b] py-4 text-[15px] font-semibold text-white transition hover:bg-[#005a59] disabled:opacity-50"
+            className="w-[340px] rounded-[14px] bg-[#0d7777] py-3.5 text-[16px] font-semibold text-white transition hover:bg-[#0b6666] disabled:opacity-50"
           >
             {loading ? "Сохранение…" : "Добавить продукт"}
           </button>
@@ -395,21 +398,21 @@ function EditProductModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
-      <div className="relative z-10 flex max-h-[90vh] w-full max-w-[900px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[#ececee] px-8 py-5">
-          <div>
-            <h2 className="text-[20px] font-bold text-[#0a0a0a]">Товар</h2>
+      <div className="relative z-10 flex max-h-[90vh] w-full max-w-[980px] flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl">
+        <div className="flex items-center justify-between px-8 pb-4 pt-6">
+          <h2 className="text-[24px] font-bold leading-none text-[#0d0d0f]">
+            Товар{" "}
             {item ? (
-              <p className="mt-1 text-[14px] text-[#8a8a8a]">
+              <span className="ml-3 text-[24px] font-semibold text-[#8f939a]">
                 ID {displayProductExternalId(item)}
-              </p>
+              </span>
             ) : null}
-          </div>
+          </h2>
           <button
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="rounded-lg p-2 text-[#9ca3af] hover:bg-black/5"
+            className="rounded-lg p-2 text-[#202124] hover:bg-black/5"
             aria-label="Закрыть"
           >
             <IconClose />
@@ -420,118 +423,128 @@ function EditProductModal({
             Загрузка…
           </div>
         ) : (
-          <div className="grid flex-1 gap-8 overflow-y-auto p-8 md:grid-cols-2">
-            <div className="flex flex-col gap-6">
-              <div className="overflow-hidden rounded-2xl border border-[#e8e8ec] bg-[#f8f8f8]">
+          <div className="grid flex-1 gap-4 overflow-y-auto px-8 pb-6 md:grid-cols-[340px_1fr]">
+            <div className="flex flex-col gap-3">
+              <div className="flex h-[320px] items-center justify-center overflow-hidden rounded-2xl border border-[#e6e8eb] bg-[#edf0f2]">
                 {imageUrl.trim() ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={resolveMediaUrl(imageUrl.trim())}
                     alt=""
-                    className="mx-auto max-h-64 w-full object-contain"
+                    className="mx-auto max-h-[290px] w-full object-contain"
                   />
                 ) : (
-                  <div className="flex h-52 items-center justify-center text-[#b0b0b0]">
+                  <div className="flex items-center justify-center text-[16px] text-[#b0b0b0]">
                     Нет фото
                   </div>
                 )}
               </div>
               <input
-                className="w-full rounded-xl border border-[#e4e4e4] px-3 py-2 text-[13px]"
+                className="w-full rounded-xl border border-[#d8dde2] bg-white px-3 py-2 text-[13px] text-[#0a0a0a] outline-none"
                 placeholder="URL изображения"
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
               />
-              <div>
-                <label className="text-[13px] font-medium text-[#8a8a8a]">
+              <div className="overflow-hidden rounded-2xl border border-[#e6e8eb]">
+                <label className="block border-b border-[#eceef1] px-4 py-2.5 text-[14px] text-[#a1a5aa]">
                   Категория товара
                 </label>
-                <select
-                  className="mt-2 w-full rounded-2xl border border-[#e8e8ec] bg-[#f5f5f7] px-4 py-3 text-[14px]"
+                <CustomDropdown
                   value={subId}
-                  onChange={(e) => setSubId(e.target.value)}
-                >
-                  {subcategoryOptions.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSubId}
+                  buttonClassName="bg-white px-4 py-3 text-[18px] leading-tight text-[#0a0a0a]"
+                  options={subcategoryOptions.map((o) => ({
+                    value: String(o.id),
+                    label: o.label,
+                  }))}
+                />
               </div>
             </div>
-            <div className="flex flex-col gap-5">
-              <div className="relative">
-                <label className="text-[12px] font-medium text-[#8a8a8a]">
+            <div className="flex flex-col gap-3">
+              <div className="relative overflow-hidden rounded-2xl border border-[#e6e8eb]">
+                <label className="block border-b border-[#eceef1] px-4 py-2.5 text-[14px] text-[#a1a5aa]">
                   Название продукта
                 </label>
-                <span className="absolute right-5 top-8 text-[#b0b0b0]">
-                  <IconPencil />
-                </span>
                 <input
-                  className="mt-1 w-full rounded-2xl border border-[#e8e8ec] bg-[#f5f5f7] px-4 py-3 pr-10 text-[14px]"
+                  className="w-full bg-white px-4 py-3 pr-10 text-[16px] leading-tight text-[#1a1d22] outline-none"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
               </div>
-              <div className="relative">
-                <label className="text-[12px] font-medium text-[#8a8a8a]">
+              <div className="relative overflow-hidden rounded-2xl border border-[#e6e8eb]">
+                <label className="block border-b border-[#eceef1] px-4 py-2.5 text-[14px] text-[#a1a5aa]">
                   Описание продукта
                 </label>
-                <span className="absolute right-5 top-8 text-[#b0b0b0]">
-                  <IconPencil />
-                </span>
                 <textarea
-                  rows={5}
-                  className="mt-1 w-full resize-none rounded-2xl border border-[#e8e8ec] bg-[#f5f5f7] px-4 py-3 pr-10 text-[14px]"
+                  rows={3}
+                  className="w-full resize-none bg-white px-4 py-3 pr-10 text-[16px] leading-6 text-[#1a1d22] outline-none"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
               </div>
-              <div className="relative">
-                <label className="text-[12px] font-medium text-[#8a8a8a]">
-                  Срок годности
-                </label>
-                <span className="absolute right-5 top-8 text-[#b0b0b0]">
-                  <IconPencil />
-                </span>
-                <input
-                  className="mt-1 w-full rounded-2xl border border-[#e8e8ec] bg-[#f5f5f7] px-4 py-3 pr-10 text-[14px]"
-                  value={shelfLife}
-                  onChange={(e) => setShelfLife(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="text-[12px] font-medium text-[#8a8a8a]">
-                  Цена товара за единицу
-                </label>
-                <div className="mt-2 grid grid-cols-2 gap-3">
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="relative overflow-hidden rounded-2xl border border-[#e6e8eb]">
+                  <label className="block border-b border-[#eceef1] px-4 py-2.5 text-[14px] text-[#a1a5aa]">
+                    Срок годности
+                  </label>
                   <input
-                    className="rounded-2xl border border-[#e8e8ec] bg-[#f5f5f7] px-4 py-3 text-[14px]"
-                    inputMode="numeric"
-                    value={priceUzs}
-                    onChange={(e) => setPriceUzs(e.target.value)}
+                    className="w-full bg-white px-4 py-3 pr-10 text-[16px] leading-tight text-[#1a1d22] outline-none"
+                    value={shelfLife}
+                    onChange={(e) => setShelfLife(e.target.value)}
                   />
-                  <div className="flex items-center rounded-2xl border border-[#e8e8ec] bg-[#fafafa] px-4 py-3 text-[13px] text-[#6e6e6e]">
-                    {previewUsdEdit != null
-                      ? formatProductUsd(previewUsdEdit)
-                      : item?.price_usd != null
-                        ? formatProductUsd(item.price_usd)
-                        : "—"}
+                </div>
+                <div className="overflow-hidden rounded-2xl border border-[#e6e8eb]">
+                  <label className="block border-b border-[#eceef1] px-4 py-2.5 text-[14px] text-[#a1a5aa]">
+                    Цена товара за единицу
+                  </label>
+                  <div className="grid grid-cols-[1fr_48px_1fr_48px]">
+                    <input
+                      className="min-w-0 bg-white px-4 py-3 text-[16px] leading-tight text-[#1a1d22] outline-none"
+                      inputMode="numeric"
+                      value={priceUzs}
+                      onChange={(e) => setPriceUzs(e.target.value)}
+                    />
+                    <div className="flex items-center justify-center border-l border-[#eceef1] text-[16px] font-semibold leading-tight text-[#1a1d22]">
+                      сум
+                    </div>
+                    <div className="border-l border-[#eceef1] bg-[#f8f9fb] px-4 py-3 text-[16px] leading-tight text-[#1a1d22]">
+                      {previewUsdEdit != null
+                        ? previewUsdEdit.toLocaleString("ru-RU", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                        : item?.price_usd != null
+                          ? item.price_usd.toLocaleString("ru-RU", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })
+                          : "0.00"}
+                    </div>
+                    <div className="flex items-center justify-center border-l border-[#eceef1] text-[16px] font-semibold leading-tight text-[#1a1d22]">
+                      $
+                    </div>
                   </div>
                 </div>
               </div>
+              <p className="text-[12px] text-[#9ca3af]">
+                {previewUsdEdit != null
+                  ? `По курсу: ${formatProductUsd(previewUsdEdit)}`
+                  : item?.price_usd != null
+                    ? `Текущее значение: ${formatProductUsd(item.price_usd)}`
+                    : "USD будет рассчитан автоматически"}
+              </p>
             </div>
           </div>
         )}
         {err ? (
           <p className="px-8 pb-2 text-center text-[13px] text-red-600">{err}</p>
         ) : null}
-        <div className="border-t border-[#ececee] px-8 py-5">
+        <div className="px-8 pb-6 pt-2">
           <button
             type="button"
             disabled={saving || loading || !item}
             onClick={() => void save()}
-            className="w-full rounded-2xl bg-[#006c6b] py-4 text-[15px] font-semibold text-white transition hover:bg-[#005a59] disabled:opacity-50"
+            className="w-[340px] rounded-[14px] bg-[#0d7777] py-3.5 text-[16px] font-semibold text-white transition hover:bg-[#0b6666] disabled:opacity-50"
           >
             {saving ? "Сохранение…" : "Сохранить изменения"}
           </button>

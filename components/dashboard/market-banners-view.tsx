@@ -152,9 +152,20 @@ function DeleteBannerModal({
           <IconClose />
         </button>
         <div className="flex flex-col items-center text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#ffebee] text-[#d32f2f]">
-            <span className="text-3xl font-bold">!</span>
-          </span>
+          <div className="mx-auto flex h-16 w-16 items-center justify-center">
+            <svg width="104" height="104" viewBox="0 0 104 104" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g clipPath="url(#clip0_351_3234)">
+                <circle cx="52" cy="51.9998" r="39" stroke="#FF0000" strokeOpacity="0.75" strokeWidth="8.66667" strokeLinecap="round" strokeLinejoin="round" />
+                <rect x="52" y="69.3334" width="0.0433333" height="0.0433333" stroke="#FF0000" strokeOpacity="0.75" strokeWidth="13" strokeLinejoin="round" />
+                <path d="M52 52L52 34.6667" stroke="#FF0000" strokeOpacity="0.75" strokeWidth="8.66667" strokeLinecap="round" strokeLinejoin="round" />
+              </g>
+              <defs>
+                <clipPath id="clip0_351_3234">
+                  <rect width="104" height="104" fill="white" />
+                </clipPath>
+              </defs>
+            </svg>
+          </div>
           <h3 className="mt-4 text-[18px] font-bold text-[#0a0a0a]">Внимание !</h3>
           <p className="mt-3 text-[14px] leading-relaxed text-[#5a5a5e]">
             Вы действительно хотите удалить баннер с главной страницы?

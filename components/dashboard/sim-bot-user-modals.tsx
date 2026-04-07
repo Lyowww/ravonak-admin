@@ -6,6 +6,7 @@ import { authenticatedFetchJson } from "@/lib/authenticated-fetch";
 import { formatTelegramDisplay, formatUserDate } from "@/lib/market-users-format";
 import { formatSimIls, formatSimIlsSigned } from "@/lib/sim-bot-format";
 import { formatMtDateTime } from "@/lib/mt-orders-format";
+import { CustomDropdown } from "@/components/dashboard/custom-dropdown";
 import type {
   SimBotBalanceAdjustBody,
   SimBotBalanceHistoryItem,
@@ -185,21 +186,23 @@ export function SimBotAddUserModal({ open, onClose, onSuccess }: SimBotAddUserMo
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="text-[12px] font-medium text-[#8a8a8a]">Тариф*</span>
-              <select
-                className="mt-1 w-full rounded-2xl border border-[#e8e8ec] bg-[#f5f5f7] px-4 py-3 text-[14px]"
-                value={tariffId}
-                onChange={(e) => setTariffId(e.target.value)}
-              >
-                {tariffs.length === 0 ? (
-                  <option value="">Загрузка…</option>
-                ) : (
-                  tariffs.map((t) => (
-                    <option key={t.id} value={String(t.id)}>
-                      {t.name_tarif || t.tarif || `Тариф #${t.id}`}
-                    </option>
-                  ))
-                )}
-              </select>
+              <div className="mt-1 overflow-visible rounded-2xl border border-[#e8e8ec] bg-[#f5f5f7]">
+                <CustomDropdown
+                  value={tariffId}
+                  onChange={setTariffId}
+                  disabled={tariffs.length === 0}
+                  placeholder="Выберите тариф"
+                  buttonClassName="px-4 py-3 text-[14px]"
+                  options={
+                    tariffs.length === 0
+                      ? [{ value: "", label: "Загрузка…" }]
+                      : tariffs.map((t) => ({
+                          value: String(t.id),
+                          label: t.name_tarif || t.tarif || `Тариф #${t.id}`,
+                        }))
+                  }
+                />
+              </div>
             </label>
             <label className="block">
               <span className="text-[12px] font-medium text-[#8a8a8a]">Задолженность (₪)</span>
@@ -486,17 +489,23 @@ export function SimBotUserDetailModal({
                 </label>
                 <label className="block">
                   <span className="text-[12px] font-medium text-[#8a8a8a]">Тариф</span>
-                  <select
-                    className="mt-1 w-full rounded-2xl border border-[#e8e8ec] bg-[#f5f5f7] px-4 py-3 text-[14px]"
-                    value={tariffId}
-                    onChange={(e) => setTariffId(e.target.value)}
-                  >
-                    {tariffs.map((t) => (
-                      <option key={t.id} value={String(t.id)}>
-                        {t.name_tarif || t.tarif || `Тариф #${t.id}`}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="mt-1 overflow-visible rounded-2xl border border-[#e8e8ec] bg-[#f5f5f7]">
+                    <CustomDropdown
+                      value={tariffId}
+                      onChange={setTariffId}
+                      disabled={tariffs.length === 0}
+                      placeholder="Выберите тариф"
+                      buttonClassName="px-4 py-3 text-[14px]"
+                      options={
+                        tariffs.length === 0
+                          ? [{ value: "", label: "Нет тарифов" }]
+                          : tariffs.map((t) => ({
+                              value: String(t.id),
+                              label: t.name_tarif || t.tarif || `Тариф #${t.id}`,
+                            }))
+                      }
+                    />
+                  </div>
                 </label>
               </div>
             )}

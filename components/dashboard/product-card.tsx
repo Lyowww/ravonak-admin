@@ -41,13 +41,13 @@ export function ProductCard({
       <p className="text-[12px] text-[#8a8a8a]">
         ID {displayProductExternalId(product)}
       </p>
-      <div className="mt-3 flex flex-1 items-center justify-center overflow-hidden rounded-xl bg-[#f8f8f8] py-6">
+      <div className="mt-3 flex flex-1 items-center justify-center overflow-hidden rounded-xl">
         {imgSrc ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={imgSrc}
             alt=""
-            className="max-h-28 w-auto max-w-full object-contain"
+            className="max-h-60 w-auto max-w-full object-contain"
           />
         ) : (
           <span className="text-[13px] text-[#b0b0b0]">Нет фото</span>

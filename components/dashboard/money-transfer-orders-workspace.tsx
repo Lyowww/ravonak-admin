@@ -96,11 +96,10 @@ function MtOrderCard({
     <button
       type="button"
       onClick={onSelect}
-      className={`flex w-full items-stretch gap-3 rounded-2xl border px-4 py-3.5 text-left transition ${
-        selected
+      className={`flex w-full items-stretch gap-3 rounded-2xl border px-4 py-3.5 text-left transition ${selected
           ? "border-[#d8d8dc] bg-[#ebebed]"
           : "border-[#e8e8ec] bg-[#f5f5f7] hover:bg-[#efeff2]"
-      }`}
+        }`}
     >
       <div className="min-w-0 flex-1">
         <p className="text-[15px] font-bold text-[#0a0a0a]">№ {order.order_code}</p>
@@ -146,8 +145,19 @@ function ConfirmModal({
         >
           <IconClose />
         </button>
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#fee2e2]">
-          <span className="text-3xl font-bold text-[#ef4444]">!</span>
+        <div className="mx-auto flex h-16 w-16 items-center justify-center">
+          <svg width="104" height="104" viewBox="0 0 104 104" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g clipPath="url(#clip0_351_3234)">
+              <circle cx="52" cy="51.9998" r="39" stroke="#FF0000" strokeOpacity="0.75" strokeWidth="8.66667" strokeLinecap="round" strokeLinejoin="round" />
+              <rect x="52" y="69.3334" width="0.0433333" height="0.0433333" stroke="#FF0000" strokeOpacity="0.75" strokeWidth="13" strokeLinejoin="round" />
+              <path d="M52 52L52 34.6667" stroke="#FF0000" strokeOpacity="0.75" strokeWidth="8.66667" strokeLinecap="round" strokeLinejoin="round" />
+            </g>
+            <defs>
+              <clipPath id="clip0_351_3234">
+                <rect width="104" height="104" fill="white" />
+              </clipPath>
+            </defs>
+          </svg>
         </div>
         <h2 className="mt-5 text-center text-[20px] font-bold text-[#0a0a0a]">{title}</h2>
         <p className="mt-3 text-center text-[15px] leading-relaxed text-[#8a8a8a]">{message}</p>
@@ -164,9 +174,8 @@ function ConfirmModal({
             type="button"
             onClick={() => void onConfirm()}
             disabled={loading}
-            className={`flex-1 rounded-xl py-3.5 text-[15px] font-semibold text-white disabled:opacity-60 ${
-              danger ? "bg-[#ef4444] hover:bg-[#dc2626]" : "bg-[#006c6b] hover:bg-[#005a59]"
-            }`}
+            className={`flex-1 rounded-xl py-3.5 text-[15px] font-semibold text-white disabled:opacity-60 ${danger ? "bg-[#ef4444] hover:bg-[#dc2626]" : "bg-[#006c6b] hover:bg-[#005a59]"
+              }`}
           >
             {loading ? "…" : confirmLabel}
           </button>
@@ -632,11 +641,10 @@ export function MoneyTransferOrdersWorkspace({ variant }: { variant: WorkspaceVa
                     key={opt.key}
                     type="button"
                     onClick={() => setCollected(opt.value)}
-                    className={`rounded-full border px-4 py-2 text-[13px] font-medium transition ${
-                      collected === opt.value
+                    className={`rounded-full border px-4 py-2 text-[13px] font-medium transition ${collected === opt.value
                         ? "border-[#006c6b] bg-[#006c6b] text-white"
                         : "border-[#e4e4e4] bg-white text-[#3a3a3a] hover:border-[#d0d0d0]"
-                    }`}
+                      }`}
                   >
                     {opt.label}
                   </button>
@@ -757,9 +765,8 @@ export function MoneyTransferOrdersWorkspace({ variant }: { variant: WorkspaceVa
                   </button>
                   <span className="ml-2 inline-flex items-center gap-2 rounded-full bg-[#f5f5f7] px-3 py-1 text-[13px] font-medium text-[#3a3a3a]">
                     <span
-                      className={`h-2 w-2 rounded-full ${
-                        item.is_collected ? "bg-[#22c55e]" : "bg-[#9ca3af]"
-                      }`}
+                      className={`h-2 w-2 rounded-full ${item.is_collected ? "bg-[#22c55e]" : "bg-[#9ca3af]"
+                        }`}
                     />
                     Статус заказа: {item.status_label || (item.is_collected ? "Собранный" : "Не собран")}
                   </span>
