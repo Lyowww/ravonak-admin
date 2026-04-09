@@ -23,4 +23,6 @@ export type OrderDetail = {
     priceUzs: string;
     priceUsd: string;
   }>;
+  /** Административный комментарий к заказу */
+  adminComment: string;
 };

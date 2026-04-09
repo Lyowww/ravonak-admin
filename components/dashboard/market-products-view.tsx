@@ -760,7 +760,7 @@ export function MarketProductsView() {
               >
                 <IconPlus />
                 <p className="mt-3 text-[14px] font-semibold text-[#0a0a0a]">
-                  Добавить товар в категорию
+                  Добавить товар
                 </p>
               </button>
               {items.map((p) => (

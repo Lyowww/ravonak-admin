@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authenticatedFetchJson } from "@/lib/authenticated-fetch";
 import { formatTelegramDisplay, formatUserDate } from "@/lib/market-users-format";
-import { formatSimIls } from "@/lib/sim-bot-format";
+import { formatSimIls, parseSimDecimal } from "@/lib/sim-bot-format";
 import { SimBotAddUserModal, SimBotUserDetailModal } from "@/components/dashboard/sim-bot-user-modals";
 import type { SimBotUserListItem, SimBotUsersListResponse } from "@/types/sim-bot-api";
 
@@ -134,7 +134,11 @@ export function SimBotUsersView() {
                 </tr>
               </thead>
               <tbody>
-                {items.map((u) => (
+                {items.map((u) => {
+                  const balanceNum = parseSimDecimal(u.balance_amount);
+                  const balanceNegative =
+                    Number.isFinite(balanceNum) && balanceNum < 0;
+                  return (
                   <tr
                     key={u.id}
                     className="border-b border-[#f0f0f2] transition hover:bg-[#f8f8fa]"
@@ -148,7 +152,11 @@ export function SimBotUsersView() {
                       {formatTelegramDisplay(u.username ?? "")}
                     </td>
                     <td className="px-4 py-3.5 text-[#3a3a3e]">{u.tariff_name || "—"}</td>
-                    <td className="px-4 py-3.5 font-medium tabular-nums text-[#0a0a0a]">
+                    <td
+                      className={`px-4 py-3.5 font-medium tabular-nums ${
+                        balanceNegative ? "text-[#c62828]" : "text-[#0a0a0a]"
+                      }`}
+                    >
                       {formatSimIls(u.balance_amount)}
                     </td>
                     <td className="px-4 py-3.5">
@@ -176,7 +184,8 @@ export function SimBotUsersView() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

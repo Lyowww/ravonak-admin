@@ -185,7 +185,7 @@ function UserDetailModal({
 
             <div className="mt-8 grid gap-6 lg:grid-cols-2">
               <div>
-                <h3 className="text-[15px] font-bold text-[#0a0a0a]">SIM баланс</h3>
+                <h3 className="text-[15px] font-bold text-[#0a0a0a]">Баланс</h3>
                 <div className="mt-3 rounded-2xl border border-[#e8e8ec] bg-[#f8f8fa] px-4 py-3">
                   <p className="text-[12px] font-medium text-[#8a8a8a]">Активный баланс</p>
                   <p className="mt-1 text-[22px] font-semibold text-[#0a0a0a]">
@@ -203,7 +203,7 @@ function UserDetailModal({
                     onChange={(e) => setAmountStr(e.target.value)}
                   />
                 </label>
-                <label className="mt-3 block">
+                {/* <label className="mt-3 block">
                   <span className="text-[12px] font-medium text-[#8a8a8a]">Комментарий</span>
                   <input
                     className="mt-1 w-full rounded-2xl border border-[#e8e8ec] bg-[#f5f5f7] px-4 py-3 text-[14px]"
@@ -211,7 +211,7 @@ function UserDetailModal({
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
                   />
-                </label>
+                </label> */}
                 <div className="mt-4 flex flex-wrap gap-3">
                   <button
                     type="button"

@@ -66,6 +66,20 @@ function InnerInput({
   );
 }
 
+function isFilledPositiveDecimal(raw: string): boolean {
+  const s = String(raw).replace(/\s/g, "").replace(",", ".");
+  const n = Number(s);
+  return Number.isFinite(n) && n > 0;
+}
+
+function isValidDebitRowDateAndAmount(dateRu: string, amount: string): boolean {
+  return parseDateToApi(dateRu) != null && isFilledPositiveDecimal(amount);
+}
+
+function isValidRateRowDateAndRate(dateRu: string, rate: string): boolean {
+  return parseDateToApi(dateRu) != null && isFilledPositiveDecimal(rate);
+}
+
 export function DataDebitCreditView() {
   const router = useRouter();
   const [categories, setCategories] = useState<DebitCreditCategoryItem[]>([]);
@@ -156,6 +170,10 @@ export function DataDebitCreditView() {
     setRowSaving(category);
     const body: DebitCreditPostTransactionBody = {
       entry_kind: "transaction",
+      entry_date: apiDate,
+      category,
+      amount: amt,
+      amount_usd: amt,
       summary: "Операция (дата + сумма)",
       value: {
         category,
@@ -200,6 +218,7 @@ export function DataDebitCreditView() {
     setRowSaving("rate");
     const body: DebitCreditPostPurchaseRateBody = {
       entry_kind: "purchase_rate",
+      entry_date: apiDate,
       summary: "Курс покупки",
       value: {
         rate: rt,
@@ -226,6 +245,8 @@ export function DataDebitCreditView() {
 
   const txns = history?.transactions ?? [];
   const rates = history?.purchase_rates ?? [];
+  const rateReady = isValidRateRowDateAndRate(rateRow.dateRu, rateRow.rate);
+  const rateBusy = rowSaving === "rate";
 
   return (
     <div className="min-h-full bg-[#f0f0f2] px-4 py-8 md:px-8">
@@ -253,6 +274,8 @@ export function DataDebitCreditView() {
                 dateRu: todayRuDate(),
                 amount: "",
               };
+              const txnReady = isValidDebitRowDateAndAmount(row.dateRu, row.amount);
+              const txnBusy = rowSaving === cat.category;
               return (
                 <div
                   key={cat.category}
@@ -288,9 +311,13 @@ export function DataDebitCreditView() {
                   </div>
                   <button
                     type="button"
-                    disabled={rowSaving === cat.category}
+                    disabled={!txnReady || txnBusy}
                     onClick={() => void submitTransaction(cat.category)}
-                    className="flex h-[52px] w-[52px] shrink-0 items-center justify-center self-end rounded-xl bg-[#006c6b] text-white shadow-sm transition hover:bg-[#005a59] disabled:opacity-50 md:self-auto"
+                    className={
+                      txnReady
+                        ? "flex h-[52px] w-[52px] shrink-0 items-center justify-center self-end rounded-xl bg-[#006c6b] text-white shadow-sm transition hover:bg-[#005a59] disabled:cursor-not-allowed disabled:opacity-50 md:self-auto"
+                        : "flex h-[52px] w-[52px] shrink-0 cursor-not-allowed items-center justify-center self-end rounded-xl border border-[#e0e0e4] bg-[#ececee] text-[#5a5a5e] md:self-auto"
+                    }
                     aria-label="Сохранить"
                   >
                     <IconCheck />
@@ -321,9 +348,13 @@ export function DataDebitCreditView() {
             </div>
             <button
               type="button"
-              disabled={rowSaving === "rate"}
+              disabled={!rateReady || rateBusy}
               onClick={() => void submitRate()}
-              className="flex h-[52px] w-[52px] shrink-0 items-center justify-center self-end rounded-xl border border-[#e0e0e4] bg-[#ececee] text-[#5a5a5e] transition hover:bg-[#e2e2e6] disabled:opacity-50 md:self-auto"
+              className={
+                rateReady
+                  ? "flex h-[52px] w-[52px] shrink-0 items-center justify-center self-end rounded-xl bg-[#006c6b] text-white shadow-sm transition hover:bg-[#005a59] disabled:cursor-not-allowed disabled:opacity-50 md:self-auto"
+                  : "flex h-[52px] w-[52px] shrink-0 cursor-not-allowed items-center justify-center self-end rounded-xl border border-[#e0e0e4] bg-[#ececee] text-[#5a5a5e] md:self-auto"
+              }
               aria-label="Сохранить курс"
             >
               <IconCheck />

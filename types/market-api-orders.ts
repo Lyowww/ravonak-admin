@@ -48,6 +48,7 @@ export type MarketOrderDetailExtra = {
   assembler_id?: string | number | null;
   courier_name?: string | null;
   courier_id?: string | number | null;
+  admin_comment?: string | null;
   line_items?: MarketOrderLineItemApi[];
   items?: MarketOrderLineItemApi[];
 };

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authenticatedFetchJson } from "@/lib/authenticated-fetch";
 import { formatTelegramDisplay, formatUserDate } from "@/lib/market-users-format";
-import { formatSimIls, formatSimIlsSigned } from "@/lib/sim-bot-format";
+import { formatSimIls, formatSimIlsSigned, parseSimDecimal } from "@/lib/sim-bot-format";
 import { formatMtDateTime } from "@/lib/mt-orders-format";
 import { CustomDropdown } from "@/components/dashboard/custom-dropdown";
 import type {
@@ -20,6 +20,11 @@ import type {
   SimBotUserDetailResponse,
   SimBotUserPatchBody,
 } from "@/types/sim-bot-api";
+
+function isSimBalanceNegative(value: string | number | null | undefined): boolean {
+  const n = parseSimDecimal(value);
+  return Number.isFinite(n) && n < 0;
+}
 
 function IconClose() {
   return (
@@ -542,16 +547,17 @@ export function SimBotUserDetailModal({
               </div>
               <div>
                 <p className="text-[11px] font-medium text-[#8a8a8a]">Баланс</p>
-                <p className="mt-1 font-semibold text-[#0a0a0a]">
+                <p
+                  className={`mt-1 font-semibold ${
+                    isSimBalanceNegative(item.balance_amount)
+                      ? "text-[#c62828]"
+                      : "text-[#0a0a0a]"
+                  }`}
+                >
                   {formatSimIls(item.balance_amount)}
                 </p>
               </div>
-              <div>
-                <p className="text-[11px] font-medium text-[#8a8a8a]">Задолженность</p>
-                <p className="mt-1 font-semibold text-[#0a0a0a]">
-                  {formatSimIlsSigned(item.debt_display)}
-                </p>
-              </div>
+             
               <div className="sm:col-span-2">
                 <p className="text-[11px] font-medium text-[#8a8a8a]">Регистрация</p>
                 <p className="mt-1 text-[14px] font-medium text-[#0a0a0a]">
@@ -630,7 +636,16 @@ export function SimBotUserDetailModal({
                         </span>
                       </div>
                       <p className="mt-1 text-[12px] text-[#5a5a5e]">
-                        Баланс после: {formatSimIls(h.balance_after)}
+                        Баланс после:{" "}
+                        <span
+                          className={
+                            isSimBalanceNegative(h.balance_after)
+                              ? "font-medium text-[#c62828]"
+                              : "text-[#5a5a5e]"
+                          }
+                        >
+                          {formatSimIls(h.balance_after)}
+                        </span>
                       </p>
                       {h.note ? (
                         <p className="mt-1 text-[12px] text-[#3a3a3e]">{h.note}</p>

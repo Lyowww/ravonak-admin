@@ -3,7 +3,7 @@
 /* eslint-disable react-hooks/set-state-in-effect -- modal field sync and data loaders call setState intentionally */
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   authenticatedFetchFormData,
@@ -74,6 +74,22 @@ function IconTrashBanner() {
       />
     </svg>
   );
+}
+
+/** Required pixel size for market banner images (must match product / API expectations). */
+const BANNER_IMAGE_WIDTH = 950;
+const BANNER_IMAGE_HEIGHT = 410;
+
+function loadImageDimensionsFromObjectUrl(
+  objectUrl: string
+): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () =>
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    img.onerror = () => reject(new Error("decode"));
+    img.src = objectUrl;
+  });
 }
 
 function IconUploadArrow() {
@@ -232,13 +248,19 @@ function BannerEditorModal({
   const [isActive, setIsActive] = useState(true);
   const [imageUrl, setImageUrl] = useState("");
   const [uploadName, setUploadName] = useState<string | null>(null);
+  const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
     setErr(null);
+    setPreviewObjectUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
     if (mode === "edit" && initial) {
       setTitle(initial.title ?? "");
       setDescription(initial.description ?? "");
@@ -258,9 +280,37 @@ function BannerEditorModal({
     }
   }, [open, mode, initial, nextOrder]);
 
+  useEffect(() => {
+    if (open) return;
+    setPreviewObjectUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  }, [open]);
+
   async function onPickFile(file: File | null) {
     if (!file) return;
     setErr(null);
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      const { width, height } = await loadImageDimensionsFromObjectUrl(objectUrl);
+      if (width !== BANNER_IMAGE_WIDTH || height !== BANNER_IMAGE_HEIGHT) {
+        URL.revokeObjectURL(objectUrl);
+        setErr(
+          `Изображение должно быть ровно ${BANNER_IMAGE_WIDTH} × ${BANNER_IMAGE_HEIGHT} px (сейчас: ${width} × ${height}).`
+        );
+        return;
+      }
+    } catch {
+      URL.revokeObjectURL(objectUrl);
+      setErr("Не удалось прочитать изображение. Выберите другой файл.");
+      return;
+    }
+
+    setPreviewObjectUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return objectUrl;
+    });
     setUploading(true);
     const fd = new FormData();
     fd.append("file", file);
@@ -275,6 +325,10 @@ function BannerEditorModal({
     }
     setImageUrl(r.data.image_url);
     setUploadName(r.data.filename);
+    setPreviewObjectUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
   }
 
   async function submit() {
@@ -331,6 +385,10 @@ function BannerEditorModal({
 
   if (!open) return null;
 
+  const displayImageSrc =
+    previewObjectUrl ??
+    (imageUrl.trim() ? resolveMediaUrl(imageUrl.trim()) : "");
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
       <div className="relative z-10 flex max-h-[92vh] w-full max-w-[640px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
@@ -349,40 +407,65 @@ function BannerEditorModal({
         <div className="space-y-5 overflow-y-auto px-6 py-6">
           <label className="block cursor-pointer">
             <input
+              ref={fileInputRef}
               type="file"
               accept="image/*"
               className="sr-only"
               disabled={uploading || saving}
-              onChange={(e) => void onPickFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => {
+                const f = e.target.files?.[0] ?? null;
+                e.target.value = "";
+                void onPickFile(f);
+              }}
             />
-            <div className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#d8d8dc] bg-[#f8f8f8] px-4 py-10 transition hover:border-[#006c6b]/40">
-              {imageUrl.trim() ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={resolveMediaUrl(imageUrl.trim())}
-                  alt=""
-                  className="max-h-48 w-full max-w-md rounded-xl object-contain"
-                />
+            <div className="relative flex min-h-[200px] flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-[#d8d8dc] bg-[#f8f8f8] px-4 py-10 transition hover:border-[#006c6b]/40">
+              {displayImageSrc ? (
+                <div className="relative w-full max-w-md">
+                  <div className="aspect-[950/410] w-full overflow-hidden rounded-xl bg-[#ececee]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={displayImageSrc}
+                      alt=""
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                  {uploading ? (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/35">
+                      <span className="rounded-lg bg-white/95 px-4 py-2 text-[14px] font-medium text-[#0a0a0a] shadow">
+                        Загрузка…
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
               ) : (
                 <>
                   <IconUploadArrow />
                   <p className="mt-3 text-center text-[15px] font-semibold text-[#4a4a4e]">
                     Размер баннера
                   </p>
-                  <p className="mt-1 text-[14px] text-[#8a8a8a]">950 × 410</p>
+                  <p className="mt-1 text-[14px] text-[#8a8a8a]">
+                    {BANNER_IMAGE_WIDTH} × {BANNER_IMAGE_HEIGHT} px
+                  </p>
                 </>
               )}
             </div>
           </label>
-          {uploadName ? (
+          {uploadName || previewObjectUrl ? (
             <div className="flex items-center justify-between gap-3 rounded-xl border border-[#ececee] bg-[#fafafa] px-4 py-2 text-[13px] text-[#5a5a5e]">
-              <span className="min-w-0 truncate">{uploadName}</span>
+              <span className="min-w-0 truncate">
+                {uploadName ?? "Выбранный файл (загрузка не завершена)"}
+              </span>
               <button
                 type="button"
                 className="shrink-0 text-[#d32f2f] hover:underline"
                 onClick={() => {
                   setUploadName(null);
                   setImageUrl("");
+                  setPreviewObjectUrl((prev) => {
+                    if (prev) URL.revokeObjectURL(prev);
+                    return null;
+                  });
+                  fileInputRef.current?.focus();
                 }}
               >
                 Удалить файл
@@ -1242,7 +1325,7 @@ export function MarketBannersView() {
               >
                 <IconPlus />
                 <p className="mt-3 text-[14px] font-semibold text-[#0a0a0a]">
-                  Добавить товар в категорию
+                  Добавить товар
                 </p>
               </button>
               {promoItems.map((p) => (

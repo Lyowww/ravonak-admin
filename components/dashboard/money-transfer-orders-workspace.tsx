@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authenticatedFetchJson } from "@/lib/authenticated-fetch";
 import { formatTelegramDisplay, formatUserDate } from "@/lib/market-users-format";
 import { formatMtDateTime, formatMtMoney } from "@/lib/mt-orders-format";
@@ -17,17 +17,11 @@ import type {
 } from "@/types/money-transfer-orders-api";
 import { MtAddUserModal, MtUserDetailModal } from "@/components/dashboard/money-transfer-user-modals";
 import type {
+  MoneyTransferUserDetailResponse,
   MoneyTransferUserItem,
   MoneyTransferUsersListResponse,
 } from "@/types/money-transfer-users-api";
-
-async function copyText(text: string) {
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch {
-    /* ignore */
-  }
-}
+import { copyToClipboard } from "@/lib/copy-to-clipboard";
 
 function IconCopy({ className }: { className?: string }) {
   return (
@@ -194,6 +188,8 @@ type WorkspaceVariant = "current" | "history";
 
 export function MoneyTransferOrdersWorkspace({ variant }: { variant: WorkspaceVariant }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const createForUserParam = searchParams.get("createForUser");
   const listEndpoint =
     variant === "current"
       ? "/api/money-transfer/orders/current"
@@ -246,6 +242,7 @@ export function MoneyTransferOrdersWorkspace({ variant }: { variant: WorkspaceVa
   const [cDelivery, setCDelivery] = useState("");
   const [cCommission, setCCommission] = useState("");
   const [createSubmitting, setCreateSubmitting] = useState(false);
+  const createPrefillHandledId = useRef<number | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 400);
@@ -296,6 +293,36 @@ export function MoneyTransferOrdersWorkspace({ variant }: { variant: WorkspaceVa
   useEffect(() => {
     void loadList();
   }, [loadList]);
+
+  useEffect(() => {
+    if (variant !== "current" || !createForUserParam) return;
+    const id = Number(createForUserParam);
+    if (!Number.isFinite(id) || id < 1) {
+      router.replace("/dashboard/money-transfer/orders", { scroll: false });
+      return;
+    }
+    if (createPrefillHandledId.current === id) return;
+    createPrefillHandledId.current = id;
+    void (async () => {
+      const r = await authenticatedFetchJson<MoneyTransferUserDetailResponse>(
+        `/api/money-transfer/users/${id}`,
+        { cache: "no-store" }
+      );
+      if (!r.ok) {
+        createPrefillHandledId.current = null;
+        if (r.unauthorized) router.replace("/");
+        else router.replace("/dashboard/money-transfer/orders", { scroll: false });
+        return;
+      }
+      const u = r.data.item;
+      setPickedUser(u);
+      setCAddress(u.address?.trim() ? u.address : "");
+      setCreateStep("form");
+      setCreateOpen(true);
+      router.replace("/dashboard/money-transfer/orders", { scroll: false });
+      createPrefillHandledId.current = null;
+    })();
+  }, [variant, createForUserParam, router]);
 
   useEffect(() => {
     if (listItems.length === 0) {
@@ -712,11 +739,11 @@ export function MoneyTransferOrdersWorkspace({ variant }: { variant: WorkspaceVa
                       Оставить комментарий к заказу
                     </label>
                     <div className="mt-2 flex flex-wrap items-start gap-2">
-                      <textarea
+                      <input
                         placeholder="Введите текст"
-                        rows={3}
                         disabled={readOnly}
                         value={adminComment}
+                        type="text"
                         onChange={(e) => setAdminComment(e.target.value)}
                         className="min-w-[200px] flex-1 resize-none rounded-2xl border border-[#e8e8ec] bg-[#f5f5f7] px-4 py-3 text-[14px] text-[#0a0a0a] placeholder:text-[#b0b0b0] outline-none focus:border-[#d0d0d4] disabled:opacity-60"
                       />
@@ -757,7 +784,7 @@ export function MoneyTransferOrdersWorkspace({ variant }: { variant: WorkspaceVa
                   <span className="text-[17px] font-bold text-[#0a0a0a]">№ {item.order_code}</span>
                   <button
                     type="button"
-                    onClick={() => void copyText(item.order_code)}
+                    onClick={() => void copyToClipboard(item.order_code)}
                     className="rounded-md p-1 text-[#8a8a8a] hover:bg-black/5"
                     aria-label="Копировать номер"
                   >
@@ -784,7 +811,7 @@ export function MoneyTransferOrdersWorkspace({ variant }: { variant: WorkspaceVa
                       <span className="text-[14px] text-[#3a3a3a]">{item.client_phone}</span>
                       <button
                         type="button"
-                        onClick={() => void copyText(item.client_phone.replace(/\s/g, ""))}
+                        onClick={() => void copyToClipboard(item.client_phone.replace(/\s/g, ""))}
                         className="rounded-md p-1 text-[#8a8a8a] hover:bg-black/5"
                         aria-label="Копировать"
                       >
@@ -802,7 +829,7 @@ export function MoneyTransferOrdersWorkspace({ variant }: { variant: WorkspaceVa
                     </p>
                     <button
                       type="button"
-                      onClick={() => void copyText(item.address)}
+                      onClick={() => void copyToClipboard(item.address)}
                       className="shrink-0 rounded-md p-1 text-[#8a8a8a] hover:bg-black/5"
                       aria-label="Копировать адрес"
                     >

@@ -43,6 +43,8 @@ export function mapApiItemToOrderDetail(
   item: MarketOrderApiItem & Record<string, unknown>,
   /** Detail payload often exposes line items here instead of `item.items` */
   productsFromDetail?: MarketOrderLineItemApi[] | null,
+  /** Some APIs return admin comment on the detail root instead of `item` */
+  rootAdminComment?: string | null,
 ): OrderDetail {
   const statusVariant =
     item.status === "completed"
@@ -59,9 +61,13 @@ export function mapApiItemToOrderDetail(
     minute: "2-digit",
   });
 
-  const recipientName = pickStr(item, "recipient_name") ?? item.customer_name;
-  const recipientPhone =
-    pickStr(item, "recipient_phone") ?? item.customer_phone;
+  const explicitRecipientName = pickStr(item, "recipient_name");
+  const explicitRecipientPhone = pickStr(item, "recipient_phone");
+  const recipientName = explicitRecipientName ?? item.customer_name;
+  const recipientPhone = explicitRecipientPhone ?? item.customer_phone;
+  const hasSeparateRecipient =
+    (explicitRecipientName != null && explicitRecipientName.trim() !== "") ||
+    (explicitRecipientPhone != null && explicitRecipientPhone.trim() !== "");
 
   const ext = item as Record<string, unknown>;
   const pickerName =
@@ -82,12 +88,19 @@ export function mapApiItemToOrderDetail(
     "client_id",
     "customer_user_id",
   ]);
-  const recipientUserId = pickMarketUserIdFromOrderExtra(ext, [
+  let recipientUserId = pickMarketUserIdFromOrderExtra(ext, [
     "recipient_user_id",
     "recipient_id",
     "receiver_user_id",
     "receiver_id",
   ]);
+  if (
+    recipientUserId == null &&
+    !hasSeparateRecipient &&
+    customerUserId != null
+  ) {
+    recipientUserId = customerUserId;
+  }
   const pickerUserId = pickMarketUserIdFromOrderExtra(ext, [
     "picker_id",
     "assembler_id",
@@ -95,6 +108,10 @@ export function mapApiItemToOrderDetail(
   const courierUserId = pickMarketUserIdFromOrderExtra(ext, ["courier_id"]);
 
   const address = pickStr(item, "delivery_address") ?? "—";
+
+  const adminComment =
+    pickStr(item, "admin_comment") ??
+    (typeof rootAdminComment === "string" ? rootAdminComment : "");
 
   const itemsTotalUzs = Number.isFinite(item.total_amount_uzs)
     ? Math.round(item.total_amount_uzs).toLocaleString("ru-RU")
@@ -188,5 +205,6 @@ export function mapApiItemToOrderDetail(
     itemsTotalUzs,
     itemsTotalUsd,
     items,
+    adminComment,
   };
 }

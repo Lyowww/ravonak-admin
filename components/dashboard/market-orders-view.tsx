@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   formatPhoneDisplay,
   mapApiItemToOrderDetail,
@@ -23,6 +24,7 @@ import type {
   MarketUserDetailResponse,
   MarketUserItem,
 } from "@/types/market-users-api";
+import { copyToClipboard } from "@/lib/copy-to-clipboard";
 
 function IconRefresh({ className }: { className?: string }) {
   return (
@@ -71,14 +73,6 @@ function IconPhoneSmall({ className }: { className?: string }) {
       />
     </svg>
   );
-}
-
-async function copyText(text: string) {
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch {
-    /* ignore */
-  }
 }
 
 const LIST_ORDER_CUSTOMER_USER_KEYS = [
@@ -190,7 +184,7 @@ function PersonBlock({
           <span className="text-[14px] text-[#3a3a3a]">{phone}</span>
           <button
             type="button"
-            onClick={() => void copyText(phone.replace(/\s/g, ""))}
+            onClick={() => void copyToClipboard(phone.replace(/\s/g, ""))}
             className="rounded-md p-1 text-[#8a8a8a] transition hover:bg-black/[0.04] hover:text-[#0a0a0a]"
             aria-label="Копировать телефон"
           >
@@ -252,33 +246,70 @@ function StaffBlock({
 
 function OrderDetailPanel({
   detail,
+  orderId,
   onDeleteClick,
   onOpenUser,
+  onSaveComment,
 }: {
   detail: OrderDetail;
+  orderId: number;
   onDeleteClick: () => void;
   onOpenUser: (userId: number) => void;
+  onSaveComment: (comment: string) => Promise<void>;
 }) {
+  const [draft, setDraft] = useState(detail.adminComment);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setDraft(detail.adminComment);
+  }, [detail.id, detail.adminComment]);
+
+  async function handleSaveComment() {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await onSaveComment(draft);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-white">
       <div className="border-b border-[#ececec] px-8 pb-6 pt-6">
         <div className="flex w-full flex-col gap-4 sm:flex-row sm:flex-nowrap sm:items-end sm:gap-4">
           <div className="min-w-0 flex-1">
-            <label className="text-[13px] font-medium text-[#8a8a8a]">
+            <label
+              htmlFor={`order-admin-comment-${orderId}`}
+              className="text-[13px] font-medium text-[#8a8a8a]"
+            >
               Оставить комментарий к заказу
             </label>
             <input
+              id={`order-admin-comment-${orderId}`}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
               placeholder="Введите текст"
-              className="mt-2 w-full rounded-2xl border-0 bg-[#efeff0] px-4 py-3.5 text-[14px] text-[#0a0a0a] placeholder:text-[#a8a8ae] outline-none ring-0 focus:bg-[#e8e8ea]"
+              className="mt-2 w-full resize-y rounded-2xl border-0 bg-[#efeff0] px-4 py-3.5 text-[14px] text-[#0a0a0a] placeholder:text-[#a8a8ae] outline-none ring-0 focus:bg-[#e8e8ea]"
             />
           </div>
-          <button
-            type="button"
-            onClick={onDeleteClick}
-            className="shrink-0 rounded-2xl bg-[#ff4d4d] px-6 py-3.5 text-[14px] font-semibold text-white transition hover:bg-[#e64444]"
-          >
-            Удалить заказ
-          </button>
+          <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-end">
+            <button
+              type="button"
+              onClick={() => void handleSaveComment()}
+              disabled={saving}
+              className="rounded-2xl bg-[#2a2a2e] px-6 py-3.5 text-[14px] font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+            >
+              {saving ? "Сохранение…" : "Сохранить"}
+            </button>
+            <button
+              type="button"
+              onClick={onDeleteClick}
+              className="rounded-2xl bg-[#ff4d4d] px-6 py-3.5 text-[14px] font-semibold text-white transition hover:bg-[#e64444]"
+            >
+              Удалить заказ
+            </button>
+          </div>
         </div>
       </div>
 
@@ -302,7 +333,7 @@ function OrderDetailPanel({
                 </span>
                 <button
                   type="button"
-                  onClick={() => void copyText(detail.number)}
+                  onClick={() => void copyToClipboard(detail.number)}
                   className="rounded-lg p-1.5 text-[#8a8a8a] transition hover:bg-black/[0.04] hover:text-[#0a0a0a]"
                   aria-label="Копировать номер"
                 >
@@ -375,7 +406,7 @@ function OrderDetailPanel({
             </p>
             <button
               type="button"
-              onClick={() => void copyText(detail.address)}
+              onClick={() => void copyToClipboard(detail.address)}
               className="shrink-0 rounded-lg p-1.5 text-[#8a8a8a] transition hover:bg-black/[0.04] hover:text-[#0a0a0a]"
               aria-label="Копировать адрес"
             >
@@ -752,6 +783,7 @@ export function MarketOrdersView() {
         mapApiItemToOrderDetail(
           r.data.item as MarketOrderApiItem & Record<string, unknown>,
           r.data.products,
+          r.data.admin_comment,
         )
       );
     }
@@ -764,6 +796,29 @@ export function MarketOrdersView() {
   const refresh = useCallback(() => {
     void loadList();
   }, [loadList]);
+
+  const saveAdminComment = useCallback(
+    async (comment: string) => {
+      if (selectedId == null) return;
+      const trimmed = comment.trim();
+      const r = await marketOrdersFetchJson<{ success: boolean; message: string }>(
+        `/api/market/orders/${selectedId}/comment`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ comment: trimmed }),
+        }
+      );
+      if (!r.ok) {
+        if (r.unauthorized) router.replace("/");
+        else toast.error(r.message);
+        return;
+      }
+      setDetail((d) => (d ? { ...d, adminComment: trimmed } : d));
+      toast.success(r.data.message || "Комментарий сохранён");
+    },
+    [selectedId, router]
+  );
 
   const inProgress = listItems.filter((o) => o.status !== "completed");
   const completed = listItems.filter((o) => o.status === "completed");
@@ -902,11 +957,13 @@ export function MarketOrdersView() {
             <div className="flex h-full min-h-[320px] flex-col items-center justify-center gap-2 px-8 text-center text-[15px] text-red-700">
               {detailError}
             </div>
-          ) : detail ? (
+          ) : detail && selectedId != null ? (
             <OrderDetailPanel
               detail={detail}
+              orderId={selectedId}
               onDeleteClick={() => setDeleteOpen(true)}
               onOpenUser={openUserInfo}
+              onSaveComment={saveAdminComment}
             />
           ) : (
             <div className="flex h-full min-h-[320px] items-center justify-center px-8 text-center text-[15px] text-[#8a8a8a]">

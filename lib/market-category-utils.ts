@@ -8,6 +8,26 @@ export type SubcategoryOption = {
   label: string;
 };
 
+/** Средний уровень дерева часто — служебное имя; не показываем в подписи. */
+const OMITTED_MIDDLE_CATEGORY_NAMES = new Set([
+  "Основное",
+  "Общее",
+]);
+
+function subcategoryTreeLabel(
+  chapterName: string,
+  categoryName: string,
+  subcategoryName: string
+): string {
+  const parts = [chapterName];
+  const mid = categoryName.trim();
+  if (!OMITTED_MIDDLE_CATEGORY_NAMES.has(mid)) {
+    parts.push(categoryName);
+  }
+  parts.push(subcategoryName);
+  return parts.join(" › ");
+}
+
 export function flattenSubcategoryOptions(
   tree: MarketChapterNode[]
 ): SubcategoryOption[] {
@@ -17,7 +37,7 @@ export function flattenSubcategoryOptions(
       for (const sub of cat.subcategories ?? []) {
         out.push({
           id: sub.id,
-          label: `${ch.name} › ${cat.name} › ${sub.name}`,
+          label: subcategoryTreeLabel(ch.name, cat.name, sub.name),
         });
       }
     }

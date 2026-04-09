@@ -35,14 +35,23 @@ export async function authenticatedFetchJson<T>(
 
   const url = resolvePublicApiRequestUrl(path);
 
-  const res = await fetch(url, {
-    ...init,
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${token}`,
-      ...init?.headers,
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...init,
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+        ...init?.headers,
+      },
+    });
+  } catch {
+    return {
+      ok: false,
+      status: 0,
+      message: "Нет соединения с сервером. Проверьте сеть и что приложение запущено.",
+    };
+  }
 
   const data: unknown = await res.json().catch(() => ({}));
 
@@ -79,13 +88,22 @@ export async function authenticatedFetchFormData<T>(
 
   const url = resolvePublicApiRequestUrl(path);
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: formData,
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+  } catch {
+    return {
+      ok: false,
+      status: 0,
+      message: "Нет соединения с сервером. Проверьте сеть и что приложение запущено.",
+    };
+  }
 
   const data: unknown = await res.json().catch(() => ({}));
 

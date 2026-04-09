@@ -203,7 +203,13 @@ export function MoneyTransferUsersView() {
           setDetailOpen(false);
           setSelectedId(null);
         }}
-        showCreateOrderActions={false}
+        profileOnly
+        showCreateOrderActions
+        onProceedCreateOrder={(u) => {
+          setDetailOpen(false);
+          setSelectedId(null);
+          router.push(`/dashboard/money-transfer/orders?createForUser=${u.id}`);
+        }}
         onUserUpdated={() => void loadList()}
       />
 

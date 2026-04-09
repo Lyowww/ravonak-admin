@@ -30,6 +30,13 @@ export type DebitCreditHistoryResponse = {
 
 export type DebitCreditPostTransactionBody = {
   entry_kind: "transaction";
+  /** ISO date (YYYY-MM-DD); required by API in addition to value.date */
+  entry_date: string;
+  /** Same slug as in GET /data/debit-credit/categories; API validates against allowlist */
+  category: string;
+  /** Decimal string at body root; API accepts amount or amount_usd */
+  amount: string;
+  amount_usd: string;
   summary?: string;
   value: {
     category: string;
@@ -40,6 +47,7 @@ export type DebitCreditPostTransactionBody = {
 
 export type DebitCreditPostPurchaseRateBody = {
   entry_kind: "purchase_rate";
+  entry_date: string;
   summary?: string;
   value: {
     rate: string;
