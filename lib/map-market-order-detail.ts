@@ -1,4 +1,7 @@
-import type { MarketOrderApiItem } from "@/types/market-api-orders";
+import type {
+  MarketOrderApiItem,
+  MarketOrderLineItemApi,
+} from "@/types/market-api-orders";
 import type { OrderDetail } from "@/types/market-order";
 
 export function formatPhoneDisplay(phone: string): string {
@@ -37,7 +40,9 @@ export function pickMarketUserIdFromOrderExtra(
 }
 
 export function mapApiItemToOrderDetail(
-  item: MarketOrderApiItem & Record<string, unknown>
+  item: MarketOrderApiItem & Record<string, unknown>,
+  /** Detail payload often exposes line items here instead of `item.items` */
+  productsFromDetail?: MarketOrderLineItemApi[] | null,
 ): OrderDetail {
   const statusVariant =
     item.status === "completed"
@@ -59,9 +64,12 @@ export function mapApiItemToOrderDetail(
     pickStr(item, "recipient_phone") ?? item.customer_phone;
 
   const ext = item as Record<string, unknown>;
-  const pickerName = pickStr(item, "picker_name") ?? "—";
-  const pickerId =
-    ext.picker_id == null ? "—" : String(ext.picker_id);
+  const pickerName =
+    pickStr(item, "picker_name") ??
+    pickStr(item, "assembler_name") ??
+    "—";
+  const pickerIdRaw = ext.picker_id ?? ext.assembler_id;
+  const pickerId = pickerIdRaw == null ? "—" : String(pickerIdRaw);
 
   const courierName = pickStr(item, "courier_name") ?? "—";
   const courierId =
@@ -80,7 +88,10 @@ export function mapApiItemToOrderDetail(
     "receiver_user_id",
     "receiver_id",
   ]);
-  const pickerUserId = pickMarketUserIdFromOrderExtra(ext, ["picker_id"]);
+  const pickerUserId = pickMarketUserIdFromOrderExtra(ext, [
+    "picker_id",
+    "assembler_id",
+  ]);
   const courierUserId = pickMarketUserIdFromOrderExtra(ext, ["courier_id"]);
 
   const address = pickStr(item, "delivery_address") ?? "—";
@@ -96,7 +107,11 @@ export function mapApiItemToOrderDetail(
       })
     : "—";
 
-  const rawItems = (ext.items ?? ext.line_items) as unknown;
+  const rawItems = (
+    (Array.isArray(productsFromDetail) && productsFromDetail.length > 0
+      ? productsFromDetail
+      : null) ?? ext.items ?? ext.line_items
+  ) as unknown;
   let items: OrderDetail["items"];
 
   if (Array.isArray(rawItems) && rawItems.length > 0) {
@@ -114,7 +129,11 @@ export function mapApiItemToOrderDetail(
           : typeof qty === "string"
             ? qty
             : "";
-      const u = r.price_uzs ?? r.total_uzs;
+      const priceNum = r.price;
+      const u =
+        r.price_uzs ??
+        r.total_uzs ??
+        (typeof priceNum === "number" ? priceNum : undefined);
       const us = r.price_usd ?? r.total_usd;
       const priceUzs =
         typeof u === "number" ? Math.round(u).toLocaleString("ru-RU") : "—";
@@ -126,7 +145,7 @@ export function mapApiItemToOrderDetail(
             })
           : "—";
       return {
-        id: String(r.id ?? i),
+        id: String(r.id ?? r.product_id ?? i),
         title,
         qtyLabel,
         priceUzs,

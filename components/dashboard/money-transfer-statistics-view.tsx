@@ -135,7 +135,7 @@ export function MoneyTransferStatisticsView() {
     const parsed = parseMoneyTransferStatisticsResponse(r.data);
     if (!parsed) {
       setError(
-        "Ответ сервера не похож на статистику доставки денег. Проверьте путь API и формат JSON."
+        "Ответ сервера не похож на статистику доставки денег. Попробуйте обновить страницу позже."
       );
       setData(null);
       return;

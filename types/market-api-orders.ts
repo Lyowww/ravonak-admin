@@ -27,6 +27,9 @@ export type MarketOrdersListResponse = {
 
 export type MarketOrderDetailResponse = {
   item: MarketOrderApiItem & MarketOrderDetailExtra;
+  /** Line items when returned separately from `item` */
+  products?: MarketOrderLineItemApi[];
+  admin_comment?: string | null;
 };
 
 /** Optional fields that detail may include beyond the list schema */
@@ -41,6 +44,8 @@ export type MarketOrderDetailExtra = {
   delivery_address?: string | null;
   picker_name?: string | null;
   picker_id?: string | number | null;
+  assembler_name?: string | null;
+  assembler_id?: string | number | null;
   courier_name?: string | null;
   courier_id?: string | number | null;
   line_items?: MarketOrderLineItemApi[];
@@ -49,16 +54,20 @@ export type MarketOrderDetailExtra = {
 
 export type MarketOrderLineItemApi = {
   id?: number | string;
+  product_id?: number | string;
   product_name?: string;
   name?: string;
   title?: string;
   quantity?: number | string;
   unit?: string;
   weight_grams?: number | null;
+  /** UZS (some APIs send `price` instead of `price_uzs`) */
+  price?: number;
   price_uzs?: number;
   price_usd?: number;
   total_uzs?: number;
   total_usd?: number;
+  image_url?: string | null;
 };
 
 export type DeleteRequestResponse = {

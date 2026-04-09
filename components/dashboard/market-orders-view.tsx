@@ -750,7 +750,8 @@ export function MarketOrdersView() {
       }
       setDetail(
         mapApiItemToOrderDetail(
-          r.data.item as MarketOrderApiItem & Record<string, unknown>
+          r.data.item as MarketOrderApiItem & Record<string, unknown>,
+          r.data.products,
         )
       );
     }
