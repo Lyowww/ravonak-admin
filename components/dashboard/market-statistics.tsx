@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { clearStoredToken, getStoredToken } from "@/lib/auth-storage";
 import { previousPeriodRange } from "@/lib/comparison-period";
+import { resolvePublicApiRequestUrl } from "@/lib/public-api-url";
 import type { MarketPeriod, MarketStatisticsResponse } from "@/types/market";
 import { StatCard } from "./stat-card";
 
@@ -37,9 +38,12 @@ async function fetchStats(
   params: URLSearchParams,
   token: string
 ): Promise<MarketStatisticsResponse> {
-  const res = await fetch(`/api/market/statistics?${params.toString()}`, {
-    headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
-  });
+  const res = await fetch(
+    resolvePublicApiRequestUrl(`/api/market/statistics?${params.toString()}`),
+    {
+      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+    }
+  );
   if (res.status === 401 || res.status === 403) {
     clearStoredToken();
     throw new Error("unauthorized");

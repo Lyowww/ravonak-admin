@@ -2,8 +2,8 @@ import { resolveAuthHttpUrl, type AuthSegment } from "@/lib/auth-endpoints";
 
 /**
  * Client-side URL for auth requests.
- * If NEXT_PUBLIC_API_URL is set, the browser calls the backend directly (Network tab shows that host).
- * Otherwise uses same-origin /api/auth/* (Next.js route handlers proxy using API_URL).
+ * If NEXT_PUBLIC_API_URL is set, the browser calls the backend directly.
+ * Otherwise uses same-origin `/api/auth/*` (Next.js route handlers proxy using API_URL).
  */
 export function getAuthRequestUrl(segment: AuthSegment): string {
   const direct = resolveAuthHttpUrl(process.env.NEXT_PUBLIC_API_URL, segment);

@@ -1,8 +1,14 @@
 /**
  * Builds an absolute URL for media returned by the API as a path
- * (e.g. `/uploads/banners/...`). The browser cannot load those from the Next.js origin.
- * Uses `NEXT_PUBLIC_API_URL`: strips a trailing `/api` segment so static files on the
- * same host resolve correctly (e.g. `https://host/uploads/...`).
+ * (e.g. `/uploads/banners/...`). The browser cannot load those from the admin
+ * SPA origin unless Next rewrites `/uploads/*` to the API host (`next.config.ts`
+ * uses `API_URL`) or you set `NEXT_PUBLIC_API_URL` to the API base.
+ *
+ * Priority:
+ * 1. Already absolute `http(s)://` — unchanged.
+ * 2. `NEXT_PUBLIC_API_URL` set — strip trailing `/api` and append the path.
+ * 3. Otherwise — return the path as-is; same-origin `/uploads/...` is proxied
+ *    to the backend when `API_URL` was present at build time.
  */
 export function resolveMediaUrl(url: string | null | undefined): string {
   if (url == null) return "";
@@ -11,7 +17,7 @@ export function resolveMediaUrl(url: string | null | undefined): string {
   if (u.startsWith("http://") || u.startsWith("https://")) return u;
 
   const raw = process.env.NEXT_PUBLIC_API_URL?.trim();
-  if (!raw) return u;
+  if (!raw) return u.startsWith("/") ? u : `/${u}`;
 
   let base = raw.replace(/\/+$/, "");
   if (base.endsWith("/api")) {
